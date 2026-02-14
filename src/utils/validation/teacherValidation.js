@@ -9,25 +9,38 @@ import { z } from "zod";
  */
 export const teacherUsernameSchema = z
   .string()
-  .min(3, "Username minimal 3 karakter")
-  .max(50, "Username maksimal 50 karakter")
-  .regex(/^[a-zA-Z0-9_]+$/, "Username hanya boleh huruf, angka, dan underscore")
+  .min(3, "Username must be at least 3 characters")
+  .max(50, "Username must not exceed 50 characters")
+  .regex(
+    /^[a-zA-Z0-9_]+$/,
+    "Username can only contain letters, numbers, and underscores",
+  )
   .trim();
 
 /**
  * Teacher full name schema
  */
-export const teacherFullNameSchema = z.string().min(2, "Nama lengkap minimal 2 karakter").max(100, "Nama lengkap maksimal 100 karakter").trim();
+export const teacherFullNameSchema = z
+  .string()
+  .min(2, "Full name must be at least 2 characters")
+  .max(100, "Full name must not exceed 100 characters")
+  .trim();
 
 /**
  * Branch IDs array schema
  */
-export const branchIdsSchema = z.array(z.number().positive()).min(1, "Minimal pilih 1 branch").max(10, "Maksimal 10 branch");
+export const branchIdsSchema = z
+  .array(z.number().positive())
+  .min(1, "Select at least 1 branch")
+  .max(10, "A maximum of 10 branches can be selected");
 
 /**
  * Division IDs array schema
  */
-export const divisionIdsSchema = z.array(z.number().positive()).min(1, "Minimal pilih 1 divisi").max(20, "Maksimal 20 divisi");
+export const divisionIdsSchema = z
+  .array(z.number().positive())
+  .min(1, "Select at least 1 division")
+  .max(20, "A maximum of 20 divisions can be selected");
 
 /**
  * Create teacher schema
@@ -69,7 +82,7 @@ export const validateTeacherUsername = (username) => {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Username tidak valid" };
+    return { valid: false, error: "Invalid username" };
   }
 };
 
@@ -86,7 +99,7 @@ export const validateTeacherFullName = (fullName) => {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Nama lengkap tidak valid" };
+    return { valid: false, error: "Invalid full name" };
   }
 };
 
@@ -103,7 +116,7 @@ export const validateBranchIds = (branchIds) => {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Branch IDs tidak valid" };
+    return { valid: false, error: "Invalid branch selection" };
   }
 };
 
@@ -120,6 +133,6 @@ export const validateDivisionIds = (divisionIds) => {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Division IDs tidak valid" };
+    return { valid: false, error: "Invalid division selection" };
   }
 };

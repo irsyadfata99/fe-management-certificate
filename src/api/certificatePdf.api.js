@@ -20,11 +20,15 @@ export const uploadCertificatePdf = async (printId, pdfFile) => {
   const formData = new FormData();
   formData.append("pdf", pdfFile);
 
-  const { data } = await api.post(API_ENDPOINTS.CERTIFICATE_PDF.UPLOAD(printId), formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
+  const { data } = await api.post(
+    API_ENDPOINTS.CERTIFICATE_PDF.UPLOAD(printId),
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     },
-  });
+  );
 
   return data;
 };
@@ -50,9 +54,12 @@ export const uploadCertificatePdf = async (printId, pdfFile) => {
  * downloadBlob(response.data, filename);
  */
 export const downloadCertificatePdf = async (printId) => {
-  const response = await api.get(API_ENDPOINTS.CERTIFICATE_PDF.DOWNLOAD(printId), {
-    responseType: "blob",
-  });
+  const response = await api.get(
+    API_ENDPOINTS.CERTIFICATE_PDF.DOWNLOAD(printId),
+    {
+      responseType: "blob",
+    },
+  );
   return response.data;
 };
 
@@ -70,9 +77,12 @@ export const downloadCertificatePdf = async (printId) => {
  * downloadBlob(response.data, filename);
  */
 export const downloadCertificatePdfWithHeaders = async (printId) => {
-  const response = await api.get(API_ENDPOINTS.CERTIFICATE_PDF.DOWNLOAD(printId), {
-    responseType: "blob",
-  });
+  const response = await api.get(
+    API_ENDPOINTS.CERTIFICATE_PDF.DOWNLOAD(printId),
+    {
+      responseType: "blob",
+    },
+  );
   return {
     data: response.data,
     headers: response.headers,
@@ -88,7 +98,9 @@ export const downloadCertificatePdfWithHeaders = async (printId) => {
  * await deleteCertificatePdf(123);
  */
 export const deleteCertificatePdf = async (printId) => {
-  const { data } = await api.delete(API_ENDPOINTS.CERTIFICATE_PDF.DELETE(printId));
+  const { data } = await api.delete(
+    API_ENDPOINTS.CERTIFICATE_PDF.DELETE(printId),
+  );
   return data;
 };
 
@@ -108,8 +120,8 @@ export const deleteCertificatePdf = async (printId) => {
  * });
  */
 export const listCertificatePdfs = async (params = {}) => {
-  const { data } = await api.get(API_ENDPOINTS.CERTIFICATE_PDF.LIST, { params });
+  const { data } = await api.get(API_ENDPOINTS.CERTIFICATE_PDF.LIST, {
+    params,
+  });
   return data;
 };
-
-// Addional irsyad

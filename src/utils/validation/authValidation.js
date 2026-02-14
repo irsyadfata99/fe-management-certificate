@@ -9,15 +9,23 @@ import { z } from "zod";
  */
 export const usernameSchema = z
   .string()
-  .min(3, "Username minimal 3 karakter")
-  .max(50, "Username maksimal 50 karakter")
-  .regex(/^[a-zA-Z0-9_]+$/, "Username hanya boleh huruf, angka, dan underscore")
+  .min(3, "Username must be at least 3 characters")
+  .max(50, "Username must not exceed 50 characters")
+  .regex(
+    /^[a-zA-Z0-9_]+$/,
+    "Username can only contain letters, numbers, and underscores",
+  )
   .trim();
 
 /**
  * Password validation rules
  */
-export const passwordSchema = z.string().min(6, "Password minimal 6 karakter").max(100, "Password maksimal 100 karakter");
+export const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character")
+  .max(100, "Password must not exceed 100 characters");
 
 /**
  * New password with confirmation
@@ -28,7 +36,7 @@ export const newPasswordSchema = z
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Password konfirmasi tidak cocok",
+    message: "Passwords do not match",
     path: ["confirmPassword"],
   });
 
@@ -50,11 +58,11 @@ export const changePasswordSchema = z
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword !== data.currentPassword, {
-    message: "Password baru harus berbeda dengan password lama",
+    message: "New password must be different from the current password",
     path: ["newPassword"],
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Password konfirmasi tidak cocok",
+    message: "Passwords do not match",
     path: ["confirmPassword"],
   });
 
@@ -79,7 +87,7 @@ export const validateUsername = (username) => {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Username tidak valid" };
+    return { valid: false, error: "Invalid username format" };
   }
 };
 
@@ -96,7 +104,7 @@ export const validatePassword = (password) => {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Password tidak valid" };
+    return { valid: false, error: "Invalid password format" };
   }
 };
 

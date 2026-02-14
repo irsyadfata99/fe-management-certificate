@@ -7,26 +7,27 @@
  * Default error messages berdasarkan status code
  */
 const STATUS_MESSAGES = {
-  400: "Permintaan tidak valid",
-  401: "Sesi Anda telah berakhir. Silakan login kembali",
-  403: "Anda tidak memiliki akses untuk melakukan aksi ini",
-  404: "Data tidak ditemukan",
-  409: "Data sudah ada atau terjadi konflik",
-  422: "Data yang dikirim tidak valid",
-  429: "Terlalu banyak permintaan. Coba lagi nanti",
-  500: "Terjadi kesalahan di server. Silakan coba lagi",
-  502: "Server tidak dapat diakses",
-  503: "Layanan sedang dalam pemeliharaan",
-  504: "Server tidak merespon",
+  400: "Invalid Request.",
+  401: "Your session has expired. Please login again.",
+  403: "You do not have permission to perform this action.",
+  404: "Data not found.",
+  409: "A conflict occurred or the data already exists.",
+  422: "The provided data is invalid.",
+  429: "Too many requests. Please try again later.",
+  500: "An internal server error occurred. Please try again.",
+  502: "Server is currently unreachable.",
+  503: "Service is undergoing maintenance.",
+  504: "The server timed out.",
 };
 
 /**
  * Network error messages
  */
 const NETWORK_MESSAGES = {
-  NETWORK_ERROR: "Tidak dapat terhubung ke server. Periksa koneksi internet Anda",
-  TIMEOUT: "Permintaan memakan waktu terlalu lama. Silakan coba lagi",
-  CANCELLED: "Permintaan dibatalkan",
+  NETWORK_ERROR:
+    "Unable to connect to the server. Please check your internet connection.",
+  TIMEOUT: "The request took too long to respond. Please try again.",
+  CANCELLED: "Request was cancelled.",
 };
 
 /**
@@ -74,7 +75,9 @@ export const getErrorMessage = (error) => {
   }
 
   // Default status message
-  return STATUS_MESSAGES[status] || "Terjadi kesalahan. Silakan coba lagi";
+  return (
+    STATUS_MESSAGES[status] || "An unexpected error occurred. Please try again."
+  );
 };
 
 /**

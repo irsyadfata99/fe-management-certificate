@@ -125,7 +125,8 @@ export const API_ENDPOINTS = {
     /**
      * PATCH /divisions/sub-divisions/:subId/toggle-active
      */
-    TOGGLE_SUB_ACTIVE: (subId) => `/divisions/sub-divisions/${subId}/toggle-active`,
+    TOGGLE_SUB_ACTIVE: (subId) =>
+      `/divisions/sub-divisions/${subId}/toggle-active`,
 
     /**
      * DELETE /divisions/sub-divisions/:subId
@@ -210,8 +211,8 @@ export const API_ENDPOINTS = {
 
     // Teacher Profile (Teacher own access)
     PROFILE: {
-      GET_ME: "/teachers/profile/me",
-      UPDATE_ME: "/teachers/profile/me",
+      GET_ME: "/teachers/profile",
+      UPDATE_ME: "/teachers/profile",
       GET_BRANCHES: "/teachers/profile/branches",
       GET_DIVISIONS: "/teachers/profile/divisions",
       GET_MODULES: "/teachers/profile/modules",

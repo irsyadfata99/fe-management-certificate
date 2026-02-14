@@ -64,7 +64,9 @@ export const getFilenameFromHeader = (header) => {
     }
 
     // Try standard format (filename="name" or filename=name)
-    const standardMatch = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/i.exec(header);
+    const standardMatch = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/i.exec(
+      header,
+    );
     if (standardMatch && standardMatch[1]) {
       let filename = standardMatch[1].trim();
 
@@ -113,12 +115,14 @@ export const downloadFile = async (url, filename = null) => {
     const blob = await response.blob();
 
     // Extract filename from header if not provided
-    const finalFilename = filename || getFilenameFromHeader(response.headers.get("content-disposition"));
+    const finalFilename =
+      filename ||
+      getFilenameFromHeader(response.headers.get("content-disposition"));
 
     downloadBlob(blob, finalFilename);
   } catch (error) {
     console.error("Download failed:", error);
-    throw new Error("Gagal mendownload file");
+    throw new Error("Failed to download file");
   }
 };
 

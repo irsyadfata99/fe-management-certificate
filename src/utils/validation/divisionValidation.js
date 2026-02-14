@@ -7,12 +7,20 @@ import { z } from "zod";
 /**
  * Division name schema
  */
-export const divisionNameSchema = z.string().min(2, "Nama divisi minimal 2 karakter").max(100, "Nama divisi maksimal 100 karakter").trim();
+export const divisionNameSchema = z
+  .string()
+  .min(2, "Division name must be at least 2 characters")
+  .max(100, "Division name must not exceed 100 characters")
+  .trim();
 
 /**
  * Age range schema
  */
-export const ageSchema = z.number().int("Umur harus bilangan bulat").min(1, "Umur minimal 1 tahun").max(100, "Umur maksimal 100 tahun");
+export const ageSchema = z
+  .number()
+  .int("Age must be an integer")
+  .min(1, "Minimum age is 1 year")
+  .max(100, "Maximum age is 100 years");
 
 /**
  * Sub division schema
@@ -24,7 +32,7 @@ export const subDivisionSchema = z
     age_max: ageSchema,
   })
   .refine((data) => data.age_min <= data.age_max, {
-    message: "Umur minimum harus <= umur maksimum",
+    message: "Minimum age must be less than or equal to maximum age",
     path: ["age_max"],
   });
 
@@ -70,7 +78,7 @@ export const validateDivisionName = (name) => {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Nama divisi tidak valid" };
+    return { valid: false, error: "Invalid division name" };
   }
 };
 
@@ -88,7 +96,7 @@ export const validateAgeRange = (min, max) => {
     if (min > max) {
       return {
         valid: false,
-        error: "Umur minimum harus <= umur maksimum",
+        error: "Minimum age must be less than or equal to maximum age",
       };
     }
 
@@ -97,7 +105,7 @@ export const validateAgeRange = (min, max) => {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Range umur tidak valid" };
+    return { valid: false, error: "Invalid age range" };
   }
 };
 
@@ -135,12 +143,14 @@ export const validateSubDivisions = (subDivisions) => {
       const sub2 = subDivisions[j];
 
       // Check if ranges overlap
-      const overlaps = (sub1.age_min <= sub2.age_max && sub1.age_max >= sub2.age_min) || (sub2.age_min <= sub1.age_max && sub2.age_max >= sub1.age_min);
+      const overlaps =
+        (sub1.age_min <= sub2.age_max && sub1.age_max >= sub2.age_min) ||
+        (sub2.age_min <= sub1.age_max && sub2.age_max >= sub1.age_min);
 
       if (overlaps) {
         return {
           valid: false,
-          error: `Range umur "${sub1.name}" dan "${sub2.name}" overlap`,
+          error: `Age range for "${sub1.name}" and "${sub2.name}" overlaps`,
         };
       }
     }
