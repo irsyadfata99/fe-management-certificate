@@ -13,7 +13,7 @@
  * - Search/filter branches
  */
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Edit2, Trash2, Power, Key, ArrowLeftRight } from "lucide-react";
@@ -92,16 +92,20 @@ export default function BranchesPage() {
     useResetBranchAdminPassword();
 
   // ============================================================================
-  // CREATE BRANCH MODAL
+  // CREATE BRANCH MODAL - FIXED
   // ============================================================================
   const CreateBranchModal = () => {
     const [isHeadBranch, setIsHeadBranch] = useState(true);
+
+    // ✅ FIX: Fetch head branches inside modal component
+    const { data: headBranchesForCreate } = useHeadBranches();
 
     const {
       register,
       handleSubmit,
       formState: { errors },
       reset,
+      setValue, // ✅ ADD: setValue for programmatic updates
     } = useForm({
       resolver: zodResolver(
         isHeadBranch ? createHeadBranchSchema : createSubBranchSchema,
@@ -111,16 +115,24 @@ export default function BranchesPage() {
       },
     });
 
+    // ✅ FIX: Update form value when radio changes
+    const handleBranchTypeChange = (isHead) => {
+      setIsHeadBranch(isHead);
+      setValue("is_head_branch", isHead);
+    };
+
     const onSubmit = (data) => {
+      console.log("✅ CREATE BRANCH SUBMIT:", data); // Debug
+
       createBranch(data, {
         onSuccess: (response) => {
           toast.success("Branch created successfully");
 
-          // Show password if head branch and password was generated
-          if (response.admin && response.admin.password) {
+          // ✅ FIX: Check temporaryPassword, not password
+          if (response.admin && response.admin.temporaryPassword) {
             setGeneratedPassword({
-              password: response.admin.password,
-              username: data.admin_username,
+              password: response.admin.temporaryPassword,
+              username: response.admin.username,
             });
             setPasswordModalOpen(true);
           }
@@ -153,7 +165,7 @@ export default function BranchesPage() {
                 <input
                   type="radio"
                   checked={isHeadBranch}
-                  onChange={() => setIsHeadBranch(true)}
+                  onChange={() => handleBranchTypeChange(true)}
                   className="w-4 h-4 text-primary-500"
                 />
                 <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -164,7 +176,7 @@ export default function BranchesPage() {
                 <input
                   type="radio"
                   checked={!isHeadBranch}
-                  onChange={() => setIsHeadBranch(false)}
+                  onChange={() => handleBranchTypeChange(false)}
                   className="w-4 h-4 text-primary-500"
                 />
                 <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -206,7 +218,7 @@ export default function BranchesPage() {
                 helperText={errors.parent_id?.message}
               >
                 <option value="">Select parent branch</option>
-                {headBranches?.map((branch) => (
+                {headBranchesForCreate?.map((branch) => (
                   <option key={branch.id} value={branch.id}>
                     {branch.name} ({branch.code})
                   </option>
@@ -301,7 +313,8 @@ export default function BranchesPage() {
         ? {
             code: selectedBranch.code,
             name: selectedBranch.name,
-            parent_id: selectedBranch.parent_id || "",
+            // ✅ FIX: Convert null to undefined, not empty string
+            parent_id: selectedBranch.parent_id || undefined,
           }
         : {},
     });
@@ -311,8 +324,20 @@ export default function BranchesPage() {
       console.log("Data:", data);
       console.log("Branch ID:", selectedBranch.id);
 
+      // ✅ FIX: Clean up data before sending to API
+      const cleanedData = {
+        code: data.code,
+        name: data.name,
+      };
+
+      // ✅ CRITICAL FIX: Only include parent_id for SUB branches
+      // Head branches should NOT have parent_id in the payload at all
+      if (!selectedBranch.is_head_branch) {
+        cleanedData.parent_id = data.parent_id === "" ? null : data.parent_id;
+      }
+
       updateBranch(
-        { id: selectedBranch.id, data },
+        { id: selectedBranch.id, data: cleanedData },
         {
           onSuccess: () => {
             toast.success("Branch updated successfully");
@@ -673,7 +698,12 @@ export default function BranchesPage() {
       <div className="glass-card-auto">
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
           <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
-            All Branches ({branches?.length || 0})
+            All Branches (
+            {branches?.reduce(
+              (total, branch) => total + 1 + (branch.sub_branches?.length || 0),
+              0,
+            ) || 0}
+            )
           </h2>
         </div>
 
@@ -692,115 +722,201 @@ export default function BranchesPage() {
               </p>
             </div>
           ) : (
-            branches?.map((branch) => (
-              <div
-                key={branch.id}
-                className="px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 flex items-center gap-3">
-                    {/* Indent for sub branches */}
-                    {!branch.is_head_branch && (
-                      <span className="text-neutral-400 dark:text-neutral-600 ml-4">
-                        └─
-                      </span>
-                    )}
+            <>
+              {branches?.map((branch) => (
+                <Fragment key={branch.id}>
+                  {/* ========================================== */}
+                  {/* HEAD BRANCH */}
+                  {/* ========================================== */}
+                  <div className="px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                              {branch.name}
+                            </span>
+                            <Badge
+                              variant="default"
+                              size="sm"
+                              className="font-mono"
+                            >
+                              {branch.code}
+                            </Badge>
 
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                          {branch.name}
-                        </span>
-                        <Badge
-                          variant="default"
-                          size="sm"
-                          className="font-mono"
-                        >
-                          {branch.code}
-                        </Badge>
+                            {/* Head/Sub Badge */}
+                            <Badge
+                              variant={
+                                branch.is_head_branch ? "primary" : "default"
+                              }
+                              size="sm"
+                            >
+                              {branch.is_head_branch ? "Head" : "Sub"}
+                            </Badge>
 
-                        {/* Head/Sub Badge */}
-                        <Badge
-                          variant={
-                            branch.is_head_branch ? "primary" : "default"
-                          }
-                          size="sm"
-                        >
-                          {branch.is_head_branch ? "Head" : "Sub"}
-                        </Badge>
-
-                        {/* Active/Inactive Badge */}
-                        <Badge
-                          variant={branch.is_active ? "success" : "danger"}
-                          size="sm"
-                        >
-                          {branch.is_active ? "Active" : "Inactive"}
-                        </Badge>
+                            {/* Active/Inactive Badge */}
+                            <Badge
+                              variant={branch.is_active ? "success" : "danger"}
+                              size="sm"
+                            >
+                              {branch.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
 
-                      {!branch.is_head_branch && branch.parent_name && (
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                          Parent: {branch.parent_name}
-                        </p>
-                      )}
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(branch)}
+                          leftIcon={<Edit2 className="w-4 h-4" />}
+                        >
+                          Edit
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleActive(branch)}
+                          leftIcon={<Power className="w-4 h-4" />}
+                          loading={isToggling}
+                        >
+                          Toggle
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleHead(branch)}
+                          leftIcon={<ArrowLeftRight className="w-4 h-4" />}
+                        >
+                          Convert
+                        </Button>
+
+                        {branch.is_head_branch && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResetPassword(branch)}
+                            leftIcon={<Key className="w-4 h-4" />}
+                            loading={isResetting}
+                          >
+                            Reset Password
+                          </Button>
+                        )}
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(branch)}
+                          leftIcon={<Trash2 className="w-4 h-4" />}
+                          className="text-danger-600 hover:text-danger-700"
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(branch)}
-                      leftIcon={<Edit2 className="w-4 h-4" />}
+                  {/* ========================================== */}
+                  {/* SUB BRANCHES (NESTED) */}
+                  {/* ========================================== */}
+                  {branch.sub_branches?.map((subBranch) => (
+                    <div
+                      key={subBranch.id}
+                      className="px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition"
                     >
-                      Edit
-                    </Button>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 flex items-center gap-3">
+                          {/* Indent indicator */}
+                          <span className="text-neutral-400 dark:text-neutral-600 ml-4">
+                            └─
+                          </span>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleToggleActive(branch)}
-                      leftIcon={<Power className="w-4 h-4" />}
-                      loading={isToggling}
-                    >
-                      Toggle
-                    </Button>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                                {subBranch.name}
+                              </span>
+                              <Badge
+                                variant="default"
+                                size="sm"
+                                className="font-mono"
+                              >
+                                {subBranch.code}
+                              </Badge>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleToggleHead(branch)}
-                      leftIcon={<ArrowLeftRight className="w-4 h-4" />}
-                    >
-                      Convert
-                    </Button>
+                              {/* Sub Badge */}
+                              <Badge variant="default" size="sm">
+                                Sub
+                              </Badge>
 
-                    {branch.is_head_branch && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleResetPassword(branch)}
-                        leftIcon={<Key className="w-4 h-4" />}
-                        loading={isResetting}
-                      >
-                        Reset Password
-                      </Button>
-                    )}
+                              {/* Active/Inactive Badge */}
+                              <Badge
+                                variant={
+                                  subBranch.is_active ? "success" : "danger"
+                                }
+                                size="sm"
+                              >
+                                {subBranch.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(branch)}
-                      leftIcon={<Trash2 className="w-4 h-4" />}
-                      className="text-danger-600 hover:text-danger-700"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))
+                            {/* Parent info */}
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                              Parent: {branch.name}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(subBranch)}
+                            leftIcon={<Edit2 className="w-4 h-4" />}
+                          >
+                            Edit
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleActive(subBranch)}
+                            leftIcon={<Power className="w-4 h-4" />}
+                            loading={isToggling}
+                          >
+                            Toggle
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleHead(subBranch)}
+                            leftIcon={<ArrowLeftRight className="w-4 h-4" />}
+                          >
+                            Convert
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(subBranch)}
+                            leftIcon={<Trash2 className="w-4 h-4" />}
+                            className="text-danger-600 hover:text-danger-700"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </Fragment>
+              ))}
+            </>
           )}
         </div>
       </div>

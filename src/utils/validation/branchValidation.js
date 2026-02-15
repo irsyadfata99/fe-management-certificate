@@ -54,19 +54,67 @@ export const createSubBranchSchema = z.object({
 
 /**
  * Update branch schema
+ * ✅ FIXED: Added transforms to handle empty strings properly
  */
 export const updateBranchSchema = z.object({
   code: branchCodeSchema.optional(),
   name: branchNameSchema.optional(),
-  parent_id: z.number().positive().optional().nullable(),
+  // ✅ FIX: Transform empty string to null/undefined
+  parent_id: z
+    .union([
+      z.number().positive(),
+      z.string().length(0), // Allow empty string
+      z.null(),
+      z.undefined(),
+    ])
+    .transform((val) => {
+      // Convert empty string to null
+      if (val === "" || val === undefined) return null;
+      // Convert string numbers to actual numbers
+      if (typeof val === "string") return parseInt(val, 10);
+      return val;
+    })
+    .pipe(
+      z
+        .number()
+        .positive("Parent branch must be a valid ID")
+        .optional()
+        .nullable(),
+    )
+    .optional()
+    .nullable(),
 });
 
 /**
  * Toggle head status schema
+ * ✅ FIXED: Added transforms to handle empty strings properly
  */
 export const toggleHeadBranchSchema = z.object({
   is_head_branch: z.boolean(),
-  parent_id: z.number().positive().optional().nullable(),
+  // ✅ FIX: Transform empty string to null/undefined
+  parent_id: z
+    .union([
+      z.number().positive(),
+      z.string().length(0), // Allow empty string
+      z.null(),
+      z.undefined(),
+    ])
+    .transform((val) => {
+      // Convert empty string to null
+      if (val === "" || val === undefined) return null;
+      // Convert string numbers to actual numbers
+      if (typeof val === "string") return parseInt(val, 10);
+      return val;
+    })
+    .pipe(
+      z
+        .number()
+        .positive("Parent branch must be a valid ID")
+        .optional()
+        .nullable(),
+    )
+    .optional()
+    .nullable(),
   admin_username: z
     .string()
     .min(3, "Admin username must be at least 3 characters")
