@@ -5,7 +5,8 @@
 import { z } from "zod";
 
 /**
- * Teacher username schema
+ * Username validation
+ * Reuse from authValidation pattern
  */
 export const teacherUsernameSchema = z
   .string()
@@ -18,7 +19,7 @@ export const teacherUsernameSchema = z
   .trim();
 
 /**
- * Teacher full name schema
+ * Full name validation
  */
 export const teacherFullNameSchema = z
   .string()
@@ -27,20 +28,26 @@ export const teacherFullNameSchema = z
   .trim();
 
 /**
- * Branch IDs array schema
+ * Branch IDs validation (1-10 branches)
  */
-export const branchIdsSchema = z
-  .array(z.number().positive())
-  .min(1, "Select at least 1 branch")
-  .max(10, "A maximum of 10 branches can be selected");
+export const teacherBranchIdsSchema = z
+  .array(z.number().positive("Branch ID must be positive"))
+  .min(1, "At least one branch must be selected")
+  .max(10, "Maximum 10 branches allowed")
+  .refine((ids) => new Set(ids).size === ids.length, {
+    message: "Duplicate branch IDs are not allowed",
+  });
 
 /**
- * Division IDs array schema
+ * Division IDs validation (1-20 divisions)
  */
-export const divisionIdsSchema = z
-  .array(z.number().positive())
-  .min(1, "Select at least 1 division")
-  .max(20, "A maximum of 20 divisions can be selected");
+export const teacherDivisionIdsSchema = z
+  .array(z.number().positive("Division ID must be positive"))
+  .min(1, "At least one division must be selected")
+  .max(20, "Maximum 20 divisions allowed")
+  .refine((ids) => new Set(ids).size === ids.length, {
+    message: "Duplicate division IDs are not allowed",
+  });
 
 /**
  * Create teacher schema
@@ -48,8 +55,8 @@ export const divisionIdsSchema = z
 export const createTeacherSchema = z.object({
   username: teacherUsernameSchema,
   full_name: teacherFullNameSchema,
-  branch_ids: branchIdsSchema,
-  division_ids: divisionIdsSchema,
+  branch_ids: teacherBranchIdsSchema,
+  division_ids: teacherDivisionIdsSchema,
 });
 
 /**
@@ -58,12 +65,13 @@ export const createTeacherSchema = z.object({
 export const updateTeacherSchema = z.object({
   username: teacherUsernameSchema.optional(),
   full_name: teacherFullNameSchema.optional(),
-  branch_ids: branchIdsSchema.optional(),
-  division_ids: divisionIdsSchema.optional(),
+  branch_ids: teacherBranchIdsSchema.optional(),
+  division_ids: teacherDivisionIdsSchema.optional(),
 });
 
 /**
- * Update teacher profile schema (teacher-owned)
+ * Update teacher profile schema (teacher own profile)
+ * Teacher can only update their full_name
  */
 export const updateTeacherProfileSchema = z.object({
   full_name: teacherFullNameSchema,
@@ -110,13 +118,13 @@ export const validateTeacherFullName = (fullName) => {
  */
 export const validateBranchIds = (branchIds) => {
   try {
-    branchIdsSchema.parse(branchIds);
+    teacherBranchIdsSchema.parse(branchIds);
     return { valid: true };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Invalid branch selection" };
+    return { valid: false, error: "Invalid branch IDs" };
   }
 };
 
@@ -127,12 +135,56 @@ export const validateBranchIds = (branchIds) => {
  */
 export const validateDivisionIds = (divisionIds) => {
   try {
-    divisionIdsSchema.parse(divisionIds);
+    teacherDivisionIdsSchema.parse(divisionIds);
     return { valid: true };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.errors[0]?.message };
     }
-    return { valid: false, error: "Invalid division selection" };
+    return { valid: false, error: "Invalid division IDs" };
+  }
+};
+
+/**
+ * Validate teacher create data
+ * @param {Object} data
+ * @returns {{ valid: boolean, errors?: Object }}
+ */
+export const validateCreateTeacher = (data) => {
+  try {
+    createTeacherSchema.parse(data);
+    return { valid: true };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errors = {};
+      error.errors.forEach((err) => {
+        const path = err.path.join(".");
+        errors[path] = err.message;
+      });
+      return { valid: false, errors };
+    }
+    return { valid: false, errors: { _error: "Validation failed" } };
+  }
+};
+
+/**
+ * Validate teacher update data
+ * @param {Object} data
+ * @returns {{ valid: boolean, errors?: Object }}
+ */
+export const validateUpdateTeacher = (data) => {
+  try {
+    updateTeacherSchema.parse(data);
+    return { valid: true };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errors = {};
+      error.errors.forEach((err) => {
+        const path = err.path.join(".");
+        errors[path] = err.message;
+      });
+      return { valid: false, errors };
+    }
+    return { valid: false, errors: { _error: "Validation failed" } };
   }
 };

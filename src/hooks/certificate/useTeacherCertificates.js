@@ -54,7 +54,7 @@ export const useMyPrints = (params = {}) => {
   return useQuery({
     queryKey: ["certificates", "my-prints", params],
     queryFn: () => certificateTeacherApi.getMyPrints(params),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 };
 

@@ -26,7 +26,7 @@ export const useCertificatePdfs = (params = {}) => {
   return useQuery({
     queryKey: ["certificate-pdfs", params],
     queryFn: () => certificatePdfApi.listCertificatePdfs(params),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 };
 
@@ -48,7 +48,8 @@ export const useUploadCertificatePdf = () => {
   return useMutation({
     mutationFn: ({ printId, file }) =>
       certificatePdfApi.uploadCertificatePdf(printId, file),
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
+      // ← REMOVE 'data, variables'
       queryClient.invalidateQueries({ queryKey: ["certificate-pdfs"] });
       queryClient.invalidateQueries({
         queryKey: ["certificates", "my-prints"],

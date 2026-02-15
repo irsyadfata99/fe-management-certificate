@@ -24,7 +24,7 @@ export const useStudents = (params = {}) => {
   return useQuery({
     queryKey: ["students", params],
     queryFn: () => studentApi.getAllStudents(params),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 };
 
@@ -64,7 +64,7 @@ export const useStudentHistory = (id, params = {}) => {
     queryKey: ["students", id, "history", params],
     queryFn: () => studentApi.getStudentHistory(id, params),
     enabled: !!id,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 };
 

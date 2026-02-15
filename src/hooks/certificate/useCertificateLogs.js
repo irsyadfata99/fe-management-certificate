@@ -28,7 +28,7 @@ export const useCertificateLogs = (params = {}) => {
   return useQuery({
     queryKey: ["certificates", "logs", params],
     queryFn: () => certificateLogApi.getCertificateLogs(params),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 };
 
@@ -47,7 +47,7 @@ export const useCertificateMigrations = (params = {}) => {
   return useQuery({
     queryKey: ["certificates", "migrations", params],
     queryFn: () => certificateLogApi.getCertificateMigrations(params),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 };
 
