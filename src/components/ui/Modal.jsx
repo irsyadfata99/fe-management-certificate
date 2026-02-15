@@ -139,6 +139,7 @@ export const ModalFooter = ({
   confirmLoading = false,
   confirmDisabled = false,
   confirmVariant = "primary",
+  confirmType = "button", // NEW: Allow dynamic button type
 }) => {
   return (
     <>
@@ -150,8 +151,8 @@ export const ModalFooter = ({
         {cancelText}
       </button>
       <button
-        type="button"
-        onClick={onConfirm}
+        type={confirmType} // FIX: Use dynamic type instead of hardcoded "button"
+        onClick={confirmType === "button" ? onConfirm : undefined} // Only use onClick if type="button"
         disabled={confirmDisabled || confirmLoading}
         className={cn(
           "px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed",

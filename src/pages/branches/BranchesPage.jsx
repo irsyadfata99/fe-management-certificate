@@ -1,5 +1,6 @@
 /**
  * Branches Page (SuperAdmin Only)
+ * Complete branch management with CRUD operations
  *
  * FEATURES:
  * - List all branches (tree view: head → sub branches)
@@ -10,161 +11,792 @@
  * - Reset admin password for head branches
  * - Delete branch (with confirmation)
  * - Search/filter branches
- *
- * COMPONENTS TO BUILD:
- * - Branch tree/list with hierarchy indicator
- * - Create branch modal (conditional fields based on is_head_branch)
- * - Edit branch modal
- * - Branch card/item showing:
- *   - Code, name, status badge
- *   - Branch type badge (Head/Sub)
- *   - Parent branch (if sub)
- *   - Action buttons (Edit, Toggle Active, Delete, Reset Password)
- * - Confirmation dialog for delete
- * - Password display modal (after reset)
- *
- * LAYOUT:
- * - Header with "Create Branch" button
- * - Filters (active/inactive, head/sub)
- * - Tree view or grouped list
  */
 
 import { useState } from "react";
-import { useBranches } from "@/hooks";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Edit2, Trash2, Power, Key, ArrowLeftRight } from "lucide-react";
+import { toast } from "sonner";
+
+// Hooks
+import {
+  useBranches,
+  useHeadBranches,
+  useCreateBranch,
+  useUpdateBranch,
+  useDeleteBranch,
+  useToggleBranchActive,
+  useToggleBranchHead,
+  useResetBranchAdminPassword,
+} from "@/hooks";
+
+// UI Components
+import {
+  Button,
+  Input,
+  Select,
+  Checkbox,
+  Modal,
+  Badge,
+  Spinner,
+  FormField,
+  FormLabel,
+} from "@/components/ui";
+
+// Shared Components
+import PasswordDisplayModal from "@/components/shared/PasswordDisplayModal";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
+
+// Validation
+import {
+  createHeadBranchSchema,
+  createSubBranchSchema,
+  updateBranchSchema,
+  toggleHeadBranchSchema,
+} from "@/utils/validation/branchValidation";
 
 export default function BranchesPage() {
+  // ============================================================================
+  // STATE MANAGEMENT
+  // ============================================================================
   const [filters, setFilters] = useState({
     includeInactive: false,
   });
 
-  const { data: branches, isLoading } = useBranches(filters);
+  // Modal states
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [toggleHeadModalOpen, setToggleHeadModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
+  // Selected branch for actions
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [generatedPassword, setGeneratedPassword] = useState(null);
+
+  // ============================================================================
+  // API HOOKS
+  // ============================================================================
+  const { data: branches, isLoading } = useBranches(filters);
+  const { data: headBranches } = useHeadBranches();
+
+  const { mutate: createBranch, isPending: isCreating } = useCreateBranch();
+  const { mutate: updateBranch, isPending: isUpdating } = useUpdateBranch();
+  const { mutate: deleteBranch, isPending: isDeleting } = useDeleteBranch();
+  const { mutate: toggleActive, isPending: isToggling } =
+    useToggleBranchActive();
+  const { mutate: toggleHead, isPending: isTogglingHead } =
+    useToggleBranchHead();
+  const { mutate: resetPassword, isPending: isResetting } =
+    useResetBranchAdminPassword();
+
+  // ============================================================================
+  // CREATE BRANCH MODAL
+  // ============================================================================
+  const CreateBranchModal = () => {
+    const [isHeadBranch, setIsHeadBranch] = useState(true);
+
+    const {
+      register,
+      handleSubmit,
+      formState: { errors },
+      reset,
+    } = useForm({
+      resolver: zodResolver(
+        isHeadBranch ? createHeadBranchSchema : createSubBranchSchema,
+      ),
+      defaultValues: {
+        is_head_branch: true,
+      },
+    });
+
+    const onSubmit = (data) => {
+      createBranch(data, {
+        onSuccess: (response) => {
+          toast.success("Branch created successfully");
+
+          // Show password if head branch and password was generated
+          if (response.admin && response.admin.password) {
+            setGeneratedPassword({
+              password: response.admin.password,
+              username: data.admin_username,
+            });
+            setPasswordModalOpen(true);
+          }
+
+          setCreateModalOpen(false);
+          reset();
+        },
+      });
+    };
+
+    const handleClose = () => {
+      setCreateModalOpen(false);
+      reset();
+      setIsHeadBranch(true);
+    };
+
+    return (
+      <Modal
+        open={createModalOpen}
+        onClose={handleClose}
+        title="Create New Branch"
+        description="Add a new branch to the system"
+        size="md"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Branch Type Selection */}
+          <FormField>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={isHeadBranch}
+                  onChange={() => setIsHeadBranch(true)}
+                  className="w-4 h-4 text-primary-500"
+                />
+                <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  Head Branch
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={!isHeadBranch}
+                  onChange={() => setIsHeadBranch(false)}
+                  className="w-4 h-4 text-primary-500"
+                />
+                <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  Sub Branch
+                </span>
+              </label>
+            </div>
+          </FormField>
+
+          {/* Branch Code */}
+          <FormField>
+            <FormLabel required>Branch Code</FormLabel>
+            <Input
+              {...register("code")}
+              placeholder="e.g., HQ, SUB1"
+              error={!!errors.code}
+              helperText={errors.code?.message}
+            />
+          </FormField>
+
+          {/* Branch Name */}
+          <FormField>
+            <FormLabel required>Branch Name</FormLabel>
+            <Input
+              {...register("name")}
+              placeholder="e.g., Head Quarter"
+              error={!!errors.name}
+              helperText={errors.name?.message}
+            />
+          </FormField>
+
+          {/* Parent Branch (Sub Branch Only) */}
+          {!isHeadBranch && (
+            <FormField>
+              <FormLabel required>Parent Branch</FormLabel>
+              <Select
+                {...register("parent_id", { valueAsNumber: true })}
+                error={!!errors.parent_id}
+                helperText={errors.parent_id?.message}
+              >
+                <option value="">Select parent branch</option>
+                {headBranches?.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name} ({branch.code})
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          )}
+
+          {/* Admin Username (Head Branch Only) */}
+          {isHeadBranch && (
+            <FormField>
+              <FormLabel>Admin Username (Optional)</FormLabel>
+              <Input
+                {...register("admin_username")}
+                placeholder="e.g., admin_hq"
+                error={!!errors.admin_username}
+                helperText={
+                  errors.admin_username?.message ||
+                  "Leave empty to auto-generate"
+                }
+              />
+            </FormField>
+          )}
+
+          {/* Hidden field for is_head_branch */}
+          <input
+            type="hidden"
+            {...register("is_head_branch")}
+            value={isHeadBranch}
+          />
+
+          {/* Footer - Manual buttons inside form */}
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 dark:bg-neutral-700 dark:text-neutral-300 dark:border-neutral-600 dark:hover:bg-neutral-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isCreating}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isCreating ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Creating...
+                </span>
+              ) : (
+                "Create Branch"
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    );
+  };
+
+  // ============================================================================
+  // EDIT BRANCH MODAL - FIXED VERSION
+  // ============================================================================
+  const EditBranchModal = () => {
+    const {
+      register,
+      handleSubmit,
+      formState: { errors },
+      reset,
+    } = useForm({
+      resolver: zodResolver(updateBranchSchema),
+      defaultValues: selectedBranch
+        ? {
+            code: selectedBranch.code,
+            name: selectedBranch.name,
+            parent_id: selectedBranch.parent_id || "",
+          }
+        : {},
+    });
+
+    const onSubmit = (data) => {
+      console.log("✅ FORM SUBMITTED!");
+      console.log("Data:", data);
+      console.log("Branch ID:", selectedBranch.id);
+
+      updateBranch(
+        { id: selectedBranch.id, data },
+        {
+          onSuccess: () => {
+            toast.success("Branch updated successfully");
+            setEditModalOpen(false);
+            setSelectedBranch(null);
+            reset();
+          },
+        },
+      );
+    };
+
+    const handleClose = () => {
+      setEditModalOpen(false);
+      setSelectedBranch(null);
+      reset();
+    };
+
+    if (!selectedBranch) return null;
+
+    return (
+      <Modal
+        open={editModalOpen}
+        onClose={handleClose}
+        title="Edit Branch"
+        description={`Update details for ${selectedBranch.name}`}
+        size="md"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Branch Code */}
+          <FormField>
+            <FormLabel required>Branch Code</FormLabel>
+            <Input
+              {...register("code")}
+              error={!!errors.code}
+              helperText={errors.code?.message}
+            />
+          </FormField>
+
+          {/* Branch Name */}
+          <FormField>
+            <FormLabel required>Branch Name</FormLabel>
+            <Input
+              {...register("name")}
+              error={!!errors.name}
+              helperText={errors.name?.message}
+            />
+          </FormField>
+
+          {/* Parent Branch (Sub Branch Only) */}
+          {!selectedBranch.is_head_branch && (
+            <FormField>
+              <FormLabel>Parent Branch</FormLabel>
+              <Select
+                {...register("parent_id", { valueAsNumber: true })}
+                error={!!errors.parent_id}
+                helperText={errors.parent_id?.message}
+              >
+                <option value="">Select parent branch</option>
+                {headBranches
+                  ?.filter((b) => b.id !== selectedBranch.id)
+                  .map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name} ({branch.code})
+                    </option>
+                  ))}
+              </Select>
+            </FormField>
+          )}
+
+          {/* Footer - FIXED: Manual buttons inside form */}
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 dark:bg-neutral-700 dark:text-neutral-300 dark:border-neutral-600 dark:hover:bg-neutral-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUpdating ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Updating...
+                </span>
+              ) : (
+                "Update Branch"
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    );
+  };
+
+  // ============================================================================
+  // TOGGLE HEAD/SUB MODAL - FIXED VERSION
+  // ============================================================================
+  const ToggleHeadModal = () => {
+    const willBeHead = selectedBranch && !selectedBranch.is_head_branch;
+
+    const {
+      register,
+      handleSubmit,
+      formState: { errors },
+      reset,
+    } = useForm({
+      resolver: zodResolver(toggleHeadBranchSchema),
+      defaultValues: {
+        is_head_branch: willBeHead,
+      },
+    });
+
+    const onSubmit = (data) => {
+      toggleHead(
+        { id: selectedBranch.id, payload: data },
+        {
+          onSuccess: (response) => {
+            toast.success(
+              `Branch converted to ${willBeHead ? "head" : "sub"} branch`,
+            );
+
+            // Show password if converted to head and password was generated
+            if (willBeHead && response.admin && response.admin.password) {
+              setGeneratedPassword({
+                password: response.admin.password,
+                username: data.admin_username,
+              });
+              setPasswordModalOpen(true);
+            }
+
+            setToggleHeadModalOpen(false);
+            setSelectedBranch(null);
+            reset();
+          },
+        },
+      );
+    };
+
+    const handleClose = () => {
+      setToggleHeadModalOpen(false);
+      setSelectedBranch(null);
+      reset();
+    };
+
+    if (!selectedBranch) return null;
+
+    return (
+      <Modal
+        open={toggleHeadModalOpen}
+        onClose={handleClose}
+        title={`Convert to ${willBeHead ? "Head" : "Sub"} Branch`}
+        description={`Change ${selectedBranch.name} to a ${willBeHead ? "head" : "sub"} branch`}
+        size="md"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {willBeHead ? (
+            <>
+              {/* Admin Username (converting to head) */}
+              <FormField>
+                <FormLabel>Admin Username</FormLabel>
+                <Input
+                  {...register("admin_username")}
+                  placeholder="e.g., admin_branch"
+                  error={!!errors.admin_username}
+                  helperText={
+                    errors.admin_username?.message ||
+                    "Leave empty to auto-generate"
+                  }
+                />
+              </FormField>
+            </>
+          ) : (
+            <>
+              {/* Parent Branch (converting to sub) */}
+              <FormField>
+                <FormLabel required>Parent Branch</FormLabel>
+                <Select
+                  {...register("parent_id", { valueAsNumber: true })}
+                  error={!!errors.parent_id}
+                  helperText={errors.parent_id?.message}
+                >
+                  <option value="">Select parent branch</option>
+                  {headBranches
+                    ?.filter((b) => b.id !== selectedBranch.id)
+                    .map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.name} ({branch.code})
+                      </option>
+                    ))}
+                </Select>
+              </FormField>
+            </>
+          )}
+
+          {/* Hidden field */}
+          <input
+            type="hidden"
+            {...register("is_head_branch")}
+            value={willBeHead}
+          />
+
+          {/* Footer - FIXED: Manual buttons inside form */}
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 dark:bg-neutral-700 dark:text-neutral-300 dark:border-neutral-600 dark:hover:bg-neutral-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isTogglingHead}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isTogglingHead ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Converting...
+                </span>
+              ) : (
+                `Convert to ${willBeHead ? "Head" : "Sub"}`
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    );
+  };
+
+  // ============================================================================
+  // ACTION HANDLERS
+  // ============================================================================
+  const handleEdit = (branch) => {
+    setSelectedBranch(branch);
+    setEditModalOpen(true);
+  };
+
+  const handleToggleActive = (branch) => {
+    toggleActive(branch.id, {
+      onSuccess: () => {
+        toast.success(
+          `Branch ${branch.is_active ? "deactivated" : "activated"}`,
+        );
+      },
+    });
+  };
+
+  const handleToggleHead = (branch) => {
+    setSelectedBranch(branch);
+    setToggleHeadModalOpen(true);
+  };
+
+  const handleResetPassword = (branch) => {
+    resetPassword(branch.id, {
+      onSuccess: (data) => {
+        setGeneratedPassword({
+          password: data.password,
+          username: `admin_${branch.code.toLowerCase()}`,
+        });
+        setPasswordModalOpen(true);
+      },
+    });
+  };
+
+  const handleDelete = (branch) => {
+    setSelectedBranch(branch);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    deleteBranch(selectedBranch.id, {
+      onSuccess: () => {
+        toast.success("Branch deleted successfully");
+        setDeleteDialogOpen(false);
+        setSelectedBranch(null);
+      },
+    });
+  };
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             Branch Management
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             Manage all branches and their hierarchy
           </p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-          + Create Branch
-        </button>
+        <Button
+          onClick={() => setCreateModalOpen(true)}
+          leftIcon={<Plus className="w-4 h-4" />}
+        >
+          Create Branch
+        </Button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white shadow rounded-lg p-4">
-        <div className="flex items-center gap-4">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              checked={filters.includeInactive}
-              onChange={(e) =>
-                setFilters({ ...filters, includeInactive: e.target.checked })
-              }
-            />
-            <span className="ml-2 text-sm text-gray-700">
-              Show inactive branches
-            </span>
-          </label>
-        </div>
+      <div className="glass-card-auto p-4">
+        <Checkbox
+          label="Show inactive branches"
+          checked={filters.includeInactive}
+          onChange={(e) =>
+            setFilters({ ...filters, includeInactive: e.target.checked })
+          }
+        />
       </div>
 
       {/* Branches List */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">
+      <div className="glass-card-auto">
+        <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+          <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
             All Branches ({branches?.length || 0})
           </h2>
         </div>
 
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
           {isLoading ? (
-            <div className="px-6 py-8 text-center text-gray-500">
-              Loading branches...
+            <div className="px-6 py-12 text-center">
+              <Spinner size="lg" className="mx-auto" />
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                Loading branches...
+              </p>
             </div>
           ) : branches?.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500">
-              No branches found
+            <div className="px-6 py-12 text-center">
+              <p className="text-neutral-600 dark:text-neutral-400">
+                No branches found
+              </p>
             </div>
           ) : (
             branches?.map((branch) => (
               <div
                 key={branch.id}
-                className="px-6 py-4 hover:bg-gray-50 transition"
+                className="px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      {/* Indent for sub branches */}
-                      {!branch.is_head_branch && (
-                        <span className="text-gray-400 ml-4">└─</span>
-                      )}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 flex items-center gap-3">
+                    {/* Indent for sub branches */}
+                    {!branch.is_head_branch && (
+                      <span className="text-neutral-400 dark:text-neutral-600 ml-4">
+                        └─
+                      </span>
+                    )}
 
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900">
-                            {branch.name}
-                          </span>
-                          <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                            {branch.code}
-                          </span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                          {branch.name}
+                        </span>
+                        <Badge
+                          variant="default"
+                          size="sm"
+                          className="font-mono"
+                        >
+                          {branch.code}
+                        </Badge>
 
-                          {/* Head/Sub Badge */}
-                          <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              branch.is_head_branch
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {branch.is_head_branch
-                              ? "Head Branch"
-                              : "Sub Branch"}
-                          </span>
+                        {/* Head/Sub Badge */}
+                        <Badge
+                          variant={
+                            branch.is_head_branch ? "primary" : "default"
+                          }
+                          size="sm"
+                        >
+                          {branch.is_head_branch ? "Head" : "Sub"}
+                        </Badge>
 
-                          {/* Active/Inactive Badge */}
-                          <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              branch.is_active
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {branch.is_active ? "Active" : "Inactive"}
-                          </span>
-                        </div>
-
-                        {!branch.is_head_branch && branch.parent_name && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            Parent: {branch.parent_name}
-                          </p>
-                        )}
+                        {/* Active/Inactive Badge */}
+                        <Badge
+                          variant={branch.is_active ? "success" : "danger"}
+                          size="sm"
+                        >
+                          {branch.is_active ? "Active" : "Inactive"}
+                        </Badge>
                       </div>
+
+                      {!branch.is_head_branch && branch.parent_name && (
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                          Parent: {branch.parent_name}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <button className="text-sm text-blue-600 hover:text-blue-700">
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(branch)}
+                      leftIcon={<Edit2 className="w-4 h-4" />}
+                    >
                       Edit
-                    </button>
-                    <button className="text-sm text-gray-600 hover:text-gray-700">
-                      Toggle Status
-                    </button>
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToggleActive(branch)}
+                      leftIcon={<Power className="w-4 h-4" />}
+                      loading={isToggling}
+                    >
+                      Toggle
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToggleHead(branch)}
+                      leftIcon={<ArrowLeftRight className="w-4 h-4" />}
+                    >
+                      Convert
+                    </Button>
+
                     {branch.is_head_branch && (
-                      <button className="text-sm text-orange-600 hover:text-orange-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleResetPassword(branch)}
+                        leftIcon={<Key className="w-4 h-4" />}
+                        loading={isResetting}
+                      >
                         Reset Password
-                      </button>
+                      </Button>
                     )}
-                    <button className="text-sm text-red-600 hover:text-red-700">
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(branch)}
+                      leftIcon={<Trash2 className="w-4 h-4" />}
+                      className="text-danger-600 hover:text-danger-700"
+                    >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -173,11 +805,40 @@ export default function BranchesPage() {
         </div>
       </div>
 
-      {/* TODO: Modals */}
-      {/* - Create Branch Modal */}
-      {/* - Edit Branch Modal */}
-      {/* - Delete Confirmation Dialog */}
-      {/* - Password Display Modal */}
+      {/* Modals */}
+      <CreateBranchModal />
+      <EditBranchModal />
+      <ToggleHeadModal />
+
+      {/* Password Display Modal */}
+      {generatedPassword && (
+        <PasswordDisplayModal
+          open={passwordModalOpen}
+          onClose={() => {
+            setPasswordModalOpen(false);
+            setGeneratedPassword(null);
+          }}
+          password={generatedPassword.password}
+          username={generatedPassword.username}
+          title="Admin Password Generated"
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {selectedBranch && (
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          onClose={() => {
+            setDeleteDialogOpen(false);
+            setSelectedBranch(null);
+          }}
+          onConfirm={confirmDelete}
+          title="Delete Branch"
+          message={`Are you sure you want to delete "${selectedBranch.name}"? This action cannot be undone.`}
+          confirmText="Delete Branch"
+          loading={isDeleting}
+        />
+      )}
     </div>
   );
 }

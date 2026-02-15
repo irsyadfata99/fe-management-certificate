@@ -1,6 +1,7 @@
 /**
  * Router Configuration
  * App routes dengan role-based protection
+ * UPDATED: Added BranchesPage, TeachersPage, CertificatesPage
  */
 
 import { createBrowserRouter, Navigate } from "react-router-dom";
@@ -14,6 +15,13 @@ import LoginPage from "@/pages/auth/LoginPage";
 
 // Dashboard
 import DashboardPage from "@/pages/DashboardPage";
+
+// SuperAdmin Pages
+import BranchesPage from "@/pages/branches/BranchesPage";
+
+// Admin Pages
+import TeachersPage from "@/pages/teachers/TeachersPage";
+import CertificatesPage from "@/pages/certificates/CertificatesPage";
 
 // Showcase (Development)
 import ComponentShowcasePage from "@/pages/showcase/ComponentShowcasePage";
@@ -63,10 +71,52 @@ export const router = createBrowserRouter([
         element: <Navigate to="/dashboard" replace />,
       },
 
-      // Dashboard
+      // Dashboard (All Roles)
       {
         path: "dashboard",
         element: <DashboardPage />,
+      },
+
+      // ======================================================================
+      // SUPERADMIN ONLY ROUTES
+      // ======================================================================
+      {
+        path: "branches",
+        element: (
+          <ProtectedRoute allowedRoles={["superadmin"]}>
+            <BranchesPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // ======================================================================
+      // ADMIN ONLY ROUTES
+      // ======================================================================
+      {
+        path: "teachers",
+        element: (
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+            <TeachersPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "certificates",
+        element: (
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+            <CertificatesPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Alternative route for certificates (matching sidebar config)
+      {
+        path: "certificates/stock",
+        element: (
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+            <CertificatesPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
