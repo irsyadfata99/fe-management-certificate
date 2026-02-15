@@ -1,25 +1,10 @@
 /**
- * UI Store
- * Global UI state management (Zustand)
+ * UI Store (Zustand)
+ * Manages UI state globally (sidebar, theme, modals, etc.)
  */
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-/**
- * Initial state
- */
-const initialState = {
-  // Theme: 'light' | 'dark' | 'system'
-  theme: "system",
-
-  // Sidebar state (for mobile/responsive)
-  sidebarOpen: true,
-  sidebarCollapsed: false,
-
-  // Mobile breakpoint
-  isMobile: false,
-};
 
 /**
  * UI Store
@@ -27,46 +12,152 @@ const initialState = {
 export const useUIStore = create(
   persist(
     (set, get) => ({
-      ...initialState,
+      // Theme State
+      theme: "light", // 'light' | 'dark'
 
-      // Theme Actions
-      setTheme: (theme) => set({ theme }),
+      // Sidebar State
+      sidebarCollapsed: false,
+      mobileSidebarOpen: false,
 
+      // Modal State
+      activeModal: null,
+      modalData: null,
+
+      // Loading State
+      globalLoading: false,
+
+      /**
+       * Toggle theme between light and dark
+       */
       toggleTheme: () => {
-        const currentTheme = get().theme;
-        const effectiveTheme =
-          currentTheme === "system"
-            ? window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light"
-            : currentTheme;
+        set((state) => {
+          const newTheme = state.theme === "light" ? "dark" : "light";
 
-        set({ theme: effectiveTheme === "dark" ? "light" : "dark" });
+          // Update document class for Tailwind dark mode
+          if (typeof document !== "undefined") {
+            document.documentElement.classList.toggle(
+              "dark",
+              newTheme === "dark",
+            );
+          }
+
+          return { theme: newTheme };
+        });
       },
 
-      // Sidebar Actions
-      setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      /**
+       * Set theme explicitly
+       * @param {string} theme - 'light' | 'dark'
+       */
+      setTheme: (theme) => {
+        set({ theme });
 
-      toggleSidebar: () =>
-        set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+        // Update document class
+        if (typeof document !== "undefined") {
+          document.documentElement.classList.toggle("dark", theme === "dark");
+        }
+      },
 
-      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+      /**
+       * Toggle sidebar collapsed state
+       */
+      toggleSidebar: () => {
+        set((state) => ({
+          sidebarCollapsed: !state.sidebarCollapsed,
+        }));
+      },
 
-      toggleSidebarCollapsed: () =>
-        set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+      /**
+       * Set sidebar collapsed state
+       * @param {boolean} collapsed
+       */
+      setSidebarCollapsed: (collapsed) => {
+        set({ sidebarCollapsed: collapsed });
+      },
 
-      // Mobile Actions
-      setIsMobile: (isMobile) => set({ isMobile }),
+      /**
+       * Toggle mobile sidebar open state
+       */
+      toggleMobileSidebar: () => {
+        set((state) => ({
+          mobileSidebarOpen: !state.mobileSidebarOpen,
+        }));
+      },
 
-      // Reset to initial state
-      reset: () => set(initialState),
+      /**
+       * Set mobile sidebar open state
+       * @param {boolean} open
+       */
+      setMobileSidebarOpen: (open) => {
+        set({ mobileSidebarOpen: open });
+      },
+
+      /**
+       * Open a modal
+       * @param {string} modalName - Name/ID of the modal
+       * @param {any} data - Data to pass to the modal
+       */
+      openModal: (modalName, data = null) => {
+        set({
+          activeModal: modalName,
+          modalData: data,
+        });
+      },
+
+      /**
+       * Close active modal
+       */
+      closeModal: () => {
+        set({
+          activeModal: null,
+          modalData: null,
+        });
+      },
+
+      /**
+       * Set global loading state
+       * @param {boolean} loading
+       */
+      setGlobalLoading: (loading) => {
+        set({ globalLoading: loading });
+      },
+
+      /**
+       * Initialize UI based on stored preferences
+       */
+      initializeUI: () => {
+        const { theme } = get();
+
+        // Apply theme on initialization
+        if (typeof document !== "undefined") {
+          document.documentElement.classList.toggle("dark", theme === "dark");
+        }
+      },
     }),
     {
       name: "ui-storage", // localStorage key
       partialize: (state) => ({
         theme: state.theme,
         sidebarCollapsed: state.sidebarCollapsed,
-      }), // Only persist theme and sidebarCollapsed
+      }),
     },
   ),
 );
+
+// Initialize UI on module load
+if (typeof document !== "undefined") {
+  const stored = localStorage.getItem("ui-storage");
+  if (stored) {
+    try {
+      const { state } = JSON.parse(stored);
+      if (state?.theme) {
+        document.documentElement.classList.toggle(
+          "dark",
+          state.theme === "dark",
+        );
+      }
+    } catch (error) {
+      console.error("Failed to parse UI storage:", error);
+    }
+  }
+}

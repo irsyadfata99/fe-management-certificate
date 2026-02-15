@@ -66,3 +66,4 @@ export * from "./shared/useDisclosure";
 export * from "./shared/useConfirm";
 export * from "./shared/useTable";
 export * from "./shared/useClipboard";
+export { useRoleGuard } from "./useRoleGuard";
