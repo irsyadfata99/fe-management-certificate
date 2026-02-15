@@ -14,7 +14,6 @@ import {
 
 // Layouts
 import AppLayout from "@/components/layout/AppLayout";
-import AuthLayout from "@/components/layout/AuthLayout";
 
 // Auth Pages
 import LoginPage from "@/pages/auth/LoginPage";
@@ -53,18 +52,12 @@ export const router = createBrowserRouter([
   // PUBLIC ROUTES
   // ==========================================================================
   {
-    path: "/",
-    element: <AuthLayout />,
-    children: [
-      {
-        path: "login",
-        element: (
-          <PublicRoute>
-            <LoginPage />
-          </PublicRoute>
-        ),
-      },
-    ],
+    path: "/login",
+    element: (
+      <PublicRoute>
+        <LoginPage />
+      </PublicRoute>
+    ),
   },
 
   // ==========================================================================
