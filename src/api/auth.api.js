@@ -11,11 +11,11 @@ import { API_ENDPOINTS } from "@/utils/constants/endpoints";
  * @param {Object} credentials
  * @param {string} credentials.username - Username
  * @param {string} credentials.password - Password
- * @returns {Promise<{user: Object, token: string, refreshToken: string}>}
+ * @returns {Promise<{user: Object, accessToken: string, refreshToken: string}>}
  *
  * @example
  * const data = await login({ username: 'admin', password: 'password' });
- * // { user: {...}, token: 'xxx', refreshToken: 'yyy' }
+ * // { user: {...}, accessToken: 'xxx', refreshToken: 'yyy' }
  */
 export const login = async (credentials) => {
   const { data } = await api.post(API_ENDPOINTS.AUTH.LOGIN, credentials);
@@ -50,10 +50,10 @@ export const getCurrentUser = async () => {
 /**
  * Refresh access token
  * @param {string} refreshToken - Refresh token
- * @returns {Promise<{token: string, refreshToken: string}>}
+ * @returns {Promise<{accessToken: string, refreshToken: string}>}
  *
  * @example
- * const { token, refreshToken } = await refreshAccessToken('refresh-token');
+ * const { accessToken, refreshToken } = await refreshAccessToken('refresh-token');
  */
 export const refreshAccessToken = async (refreshToken) => {
   const { data } = await api.post(API_ENDPOINTS.AUTH.REFRESH, { refreshToken });
@@ -74,7 +74,11 @@ export const refreshAccessToken = async (refreshToken) => {
  * });
  */
 export const changePassword = async (passwords) => {
-  const { data } = await api.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, passwords);
+  // FIX: Backend menggunakan PATCH, bukan POST (lihat authRoutes.js)
+  const { data } = await api.patch(
+    API_ENDPOINTS.AUTH.CHANGE_PASSWORD,
+    passwords,
+  );
   return data;
 };
 
@@ -91,7 +95,12 @@ export const changePassword = async (passwords) => {
  *   password: 'current-password'
  * });
  */
-export const changeUsername = async (payload) => {
-  const { data } = await api.post(API_ENDPOINTS.AUTH.CHANGE_USERNAME, payload);
+export const changeUsername = async ({ newUsername, password }) => {
+  // FIX: Backend mengharapkan field "currentPassword", bukan "password"
+  // (lihat authRoutes.js: body("currentPassword").notEmpty()...)
+  const { data } = await api.patch(API_ENDPOINTS.AUTH.CHANGE_USERNAME, {
+    newUsername,
+    currentPassword: password,
+  });
   return data;
 };

@@ -1,31 +1,6 @@
 /**
  * Dashboard Page
  * Main dashboard - redirects based on user role
- *
- * ROLE-BASED FEATURES:
- *
- * SuperAdmin:
- * - Total branches overview
- * - System health status
- * - Recent activities
- * - Quick actions (Create Branch, View Logs)
- *
- * Admin (Head Branch):
- * - Certificate stock overview
- * - Stock alerts (low stock branches)
- * - Recent certificate activities
- * - Teacher activity summary
- * - Quick actions (Bulk Create, Migrate, Backup)
- *
- * Teacher:
- * - Redirect to TeacherDashboardPage
- *
- * COMPONENTS TO BUILD:
- * - Stats cards (4 columns)
- * - Recent activity table
- * - Stock alerts list
- * - Quick action buttons
- * - Charts (optional - certificate usage over time)
  */
 
 import { useEffect } from "react";
@@ -38,10 +13,9 @@ export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    // Redirect teacher to their dashboard
-    if (isTeacher(user)) {
+    // Redirect teacher to their dashboard (ONLY ONCE)
+    if (user && isTeacher(user)) {
       navigate("/teacher", { replace: true });
-      return;
     }
   }, [user, navigate]);
 
@@ -209,7 +183,6 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500">
             Recent activity data will be displayed here...
           </p>
-          {/* TODO: Add activity table/list component */}
         </div>
       </div>
     </div>

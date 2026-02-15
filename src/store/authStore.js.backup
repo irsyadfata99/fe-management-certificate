@@ -46,16 +46,15 @@ export const useAuthStore = create(
        * Login - Set user dan tokens
        * @param {Object} userData - User data from login response
        * @param {Object} userData.user - User object
-       * @param {string} userData.accessToken - Access token (backend field name)
+       * @param {string} userData.token - Access token
        * @param {string} userData.refreshToken - Refresh token
        *
        * @example
        * const { login } = useAuthStore();
-       * login({ user: {...}, accessToken: 'xxx', refreshToken: 'yyy' });
+       * login({ user: {...}, token: 'xxx', refreshToken: 'yyy' });
        */
       login: (userData) => {
-        // FIX: Backend mengembalikan field "accessToken", bukan "token"
-        const { user, accessToken: token, refreshToken } = userData;
+        const { user, token, refreshToken } = userData;
 
         // Update Zustand state
         set({

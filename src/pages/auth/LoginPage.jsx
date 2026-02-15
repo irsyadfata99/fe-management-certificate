@@ -1,27 +1,5 @@
 /**
- * Login Page
- *
- * FEATURES:
- * - Login form (username, password)
- * - Remember me checkbox
- * - Show/hide password toggle
- * - Form validation with React Hook Form + Zod
- * - Loading state during login
- * - Error message display
- * - Auto redirect to dashboard on success
- * - Redirect based on user role
- *
- * COMPONENTS TO BUILD:
- * - Login form card (centered, max-w-md)
- * - Input fields with icons
- * - Submit button with loading spinner
- * - Error alert component
- *
- * LAYOUT:
- * - Full screen centered
- * - Brand logo/title at top
- * - Card with shadow
- * - Footer with copyright
+ * Login Page - WITH DEBUGGING
  */
 
 import { useState } from "react";
@@ -33,6 +11,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { mutate: login, isPending } = useLogin();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
   const [formData, setFormData] = useState({
@@ -44,11 +23,26 @@ export default function LoginPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    console.log("[LoginPage] Form submitted:", { username: formData.username });
+
     login(formData, {
-      onSuccess: () => {
-        // Redirect based on role
-        const from = location.state?.from?.pathname || "/dashboard";
-        navigate(from, { replace: true });
+      onSuccess: (response) => {
+        console.log("[LoginPage] Login success callback:", response);
+        console.log("[LoginPage] Current auth state:", {
+          isAuthenticated: useAuthStore.getState().isAuthenticated,
+          hasUser: !!useAuthStore.getState().user,
+          userRole: useAuthStore.getState().user?.role,
+        });
+
+        // Wait a bit for store to update
+        setTimeout(() => {
+          const from = location.state?.from?.pathname || "/dashboard";
+          console.log("[LoginPage] Redirecting to:", from);
+          navigate(from, { replace: true });
+        }, 100);
+      },
+      onError: (error) => {
+        console.error("[LoginPage] Login error:", error);
       },
     });
   };
@@ -59,6 +53,14 @@ export default function LoginPage() {
       [e.target.name]: e.target.value,
     }));
   };
+
+  // Debug: Show current state
+  console.log("[LoginPage] Current state:", {
+    isAuthenticated,
+    hasUser: !!user,
+    userRole: user?.role,
+    isPending,
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -71,6 +73,18 @@ export default function LoginPage() {
           <p className="mt-2 text-center text-sm text-gray-600">
             Sign in to your account
           </p>
+
+          {/* Debug Info */}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs">
+            <div className="font-semibold text-blue-900 mb-1">
+              🔍 Debug Info:
+            </div>
+            <div className="text-blue-700">
+              <div>Authenticated: {isAuthenticated ? "✅ Yes" : "❌ No"}</div>
+              <div>Has User: {user ? "✅ Yes" : "❌ No"}</div>
+              {user && <div>Role: {user.role}</div>}
+            </div>
+          </div>
         </div>
 
         {/* Login Form */}
@@ -127,6 +141,18 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
+
+        {/* Test Credentials */}
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
+          <div className="font-semibold text-yellow-900 mb-1">
+            🧪 Test Credentials:
+          </div>
+          <div className="text-yellow-700">
+            <div>SuperAdmin: admin / password</div>
+            <div>Admin: admin_hq / password</div>
+            <div>Teacher: teacher1 / password</div>
+          </div>
+        </div>
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-500">

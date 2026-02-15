@@ -3,7 +3,7 @@
  * App routes dengan role-based protection
  */
 
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import {
   ProtectedRoute,
   PublicRoute,
@@ -71,11 +71,13 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      // Dashboard - redirect based on role
+      // Root redirect to dashboard
       {
         index: true,
-        element: <DashboardPage />,
+        element: <Navigate to="/dashboard" replace />,
       },
+
+      // Dashboard
       {
         path: "dashboard",
         element: <DashboardPage />,

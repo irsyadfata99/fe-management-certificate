@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
     LOGOUT: "/auth/logout",
     ME: "/auth/me",
     REFRESH: "/auth/refresh",
+    // FIX: backend menggunakan PATCH, bukan POST (lihat authRoutes.js)
     CHANGE_PASSWORD: "/auth/change-password",
     CHANGE_USERNAME: "/auth/change-username",
   },
@@ -210,11 +211,33 @@ export const API_ENDPOINTS = {
     TOGGLE_ACTIVE: (id) => `/teachers/${id}/toggle-active`,
 
     // Teacher Profile (Teacher own access)
+    // Semua di-mount di /teachers/profile/* via teacherProfileRoutes
     PROFILE: {
-      GET_ME: "/teachers/profile",
-      UPDATE_ME: "/teachers/profile",
+      /**
+       * GET /teachers/profile/me
+       */
+      GET_ME: "/teachers/profile/me",
+
+      /**
+       * PATCH /teachers/profile/me
+       * Body: { full_name }
+       * FIX: backend menggunakan PATCH, bukan PUT
+       */
+      UPDATE_ME: "/teachers/profile/me",
+
+      /**
+       * GET /teachers/profile/branches
+       */
       GET_BRANCHES: "/teachers/profile/branches",
+
+      /**
+       * GET /teachers/profile/divisions
+       */
       GET_DIVISIONS: "/teachers/profile/divisions",
+
+      /**
+       * GET /teachers/profile/modules
+       */
       GET_MODULES: "/teachers/profile/modules",
     },
   },
@@ -250,6 +273,7 @@ export const API_ENDPOINTS = {
     /**
      * POST /certificates/migrate
      * Body: { startNumber, endNumber, toBranchId }
+     * NOTE: startNumber & endNumber harus format "No. 000000"
      */
     MIGRATE: "/certificates/migrate",
 
@@ -326,7 +350,7 @@ export const API_ENDPOINTS = {
   CERTIFICATE_PDF: {
     /**
      * POST /certificates/prints/:printId/pdf
-     * Upload PDF - FormData with 'pdf' field
+     * Upload PDF - FormData dengan field name "pdf"
      */
     UPLOAD: (printId) => `/certificates/prints/${printId}/pdf`,
 

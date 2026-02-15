@@ -33,7 +33,11 @@ export const getTeacherProfile = async () => {
  * });
  */
 export const updateTeacherProfile = async (updates) => {
-  const { data } = await api.put(API_ENDPOINTS.TEACHERS.PROFILE.UPDATE_ME, updates);
+  // FIX: Backend menggunakan PATCH, bukan PUT (lihat teacherProfileRoutes.js)
+  const { data } = await api.patch(
+    API_ENDPOINTS.TEACHERS.PROFILE.UPDATE_ME,
+    updates,
+  );
   return data;
 };
 

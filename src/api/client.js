@@ -84,18 +84,40 @@ client.interceptors.request.use(
  */
 client.interceptors.response.use(
   (response) => {
+    // Auto-unwrap ResponseHelper envelope: { success, message, data: {...} }
+    // Semua api file melakukan: const { data } = await api.post(...)
+    // yang mengambil axios response.data (= envelope).
+    // Interceptor ini memastikan response.data langsung berisi payload-nya.
+    if (
+      response.data &&
+      typeof response.data === "object" &&
+      "success" in response.data &&
+      "data" in response.data
+    ) {
+      response.data = response.data.data;
+    }
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
 
     // Skip refresh for certain endpoints
-    const skipRefreshEndpoints = [API_ENDPOINTS.AUTH.LOGIN, API_ENDPOINTS.AUTH.REFRESH, API_ENDPOINTS.AUTH.LOGOUT];
+    const skipRefreshEndpoints = [
+      API_ENDPOINTS.AUTH.LOGIN,
+      API_ENDPOINTS.AUTH.REFRESH,
+      API_ENDPOINTS.AUTH.LOGOUT,
+    ];
 
-    const isSkipEndpoint = skipRefreshEndpoints.some((endpoint) => originalRequest.url?.includes(endpoint));
+    const isSkipEndpoint = skipRefreshEndpoints.some((endpoint) =>
+      originalRequest.url?.includes(endpoint),
+    );
 
     // Handle 401 - Token expired
-    if (error.response?.status === 401 && !originalRequest._retry && !isSkipEndpoint) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isSkipEndpoint
+    ) {
       if (isRefreshing) {
         // Add to queue if already refreshing
         return new Promise((resolve, reject) => {
@@ -125,9 +147,15 @@ client.interceptors.response.use(
 
       try {
         // Call refresh endpoint
-        const response = await axios.post(`${BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`, { refreshToken });
+        const response = await axios.post(
+          `${BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
+          { refreshToken },
+        );
 
-        const { token: newToken, refreshToken: newRefreshToken } = response.data;
+        // FIX: Backend mengembalikan { accessToken, refreshToken }
+        // bukan { token, refreshToken }
+        const { accessToken: newToken, refreshToken: newRefreshToken } =
+          response.data;
 
         // Update tokens in store
         useAuthStore.getState().setTokens(newToken, newRefreshToken);

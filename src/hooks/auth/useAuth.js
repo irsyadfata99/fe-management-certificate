@@ -31,7 +31,8 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      // Store auth data in Zustand
+      // client.js interceptor sudah auto-unwrap envelope { success, message, data }
+      // sehingga di sini "data" sudah berisi { user, accessToken, refreshToken } langsung
       loginStore(data);
 
       // Invalidate all queries on login
@@ -133,8 +134,8 @@ export const useChangeUsername = () => {
   return useMutation({
     mutationFn: authApi.changeUsername,
     onSuccess: (data) => {
-      // Update user in store
-      if (data.user) {
+      // client.js interceptor sudah auto-unwrap envelope
+      if (data?.user) {
         setUser(data.user);
       }
 
