@@ -1,132 +1,171 @@
 /**
- * Protected Route Component - DEBUGGING VERSION
- * Handles authentication and role-based authorization
+ * Protected Route & Public Route Components
+ * Handle authentication and role-based access control
+ * PRODUCTION-READY: Clean, no debug logs, ESLint compliant
  */
 
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
-import { hasRole } from "@/utils/constants/roles";
-import { useEffect, useRef } from "react";
 
 /**
- * Protected Route Wrapper
+ * Protected Route - Requires authentication
+ * Redirects to login if not authenticated
+ *
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - Child components
+ * @returns {React.ReactNode}
+ *
+ * @example
+ * <ProtectedRoute>
+ *   <Layout />
+ * </ProtectedRoute>
  */
-export const ProtectedRoute = ({
-  children,
-  allowedRoles = null,
-  redirectTo = "/login",
-}) => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const user = useAuthStore((state) => state.user);
+export function ProtectedRoute({ children }) {
+  const { isAuthenticated, user, token } = useAuthStore();
   const location = useLocation();
 
-  // Debug counter to detect infinite loops
-  const renderCount = useRef(0);
-
-  useEffect(() => {
-    renderCount.current += 1;
-    console.log(`[ProtectedRoute] Render #${renderCount.current}`, {
-      path: location.pathname,
-      isAuthenticated,
-      hasUser: !!user,
-      userRole: user?.role,
-      allowedRoles,
-    });
-
-    // Alert if too many renders
-    if (renderCount.current > 10) {
-      console.error("⛔ INFINITE LOOP DETECTED in ProtectedRoute");
-    }
-  });
-
-  // Not authenticated - redirect to login
-  if (!isAuthenticated) {
-    console.log("[ProtectedRoute] Not authenticated, redirecting to login");
-    return <Navigate to={redirectTo} state={{ from: location }} replace />;
+  // Check authentication
+  if (!isAuthenticated || !user || !token) {
+    // Save the location they were trying to access
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Authenticated but no user data
-  if (!user) {
-    console.log(
-      "[ProtectedRoute] Authenticated but no user, redirecting to login",
-    );
-    return <Navigate to={redirectTo} replace />;
-  }
-
-  // Check role authorization if allowedRoles specified
-  if (allowedRoles) {
-    const authorized = hasRole(user, allowedRoles);
-
-    console.log("[ProtectedRoute] Checking authorization", {
-      userRole: user.role,
-      allowedRoles,
-      authorized,
-    });
-
-    if (!authorized) {
-      console.log(
-        "[ProtectedRoute] Not authorized, redirecting to /unauthorized",
-      );
-      return <Navigate to="/unauthorized" replace />;
-    }
-  }
-
-  // Authorized - render children
-  console.log("[ProtectedRoute] ✅ Authorized, rendering children");
+  // Authenticated - render protected content
   return children;
-};
+}
 
 /**
- * Public Route Wrapper
+ * Public Route - Only accessible when NOT authenticated
+ * Redirects to dashboard if already logged in
+ *
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - Child components
+ * @returns {React.ReactNode}
+ *
+ * @example
+ * <PublicRoute>
+ *   <LoginPage />
+ * </PublicRoute>
  */
-export const PublicRoute = ({ children, redirectTo = "/dashboard" }) => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const renderCount = useRef(0);
+export function PublicRoute({ children }) {
+  const { isAuthenticated, user, token } = useAuthStore();
+  const location = useLocation();
 
-  useEffect(() => {
-    renderCount.current += 1;
-    console.log(`[PublicRoute] Render #${renderCount.current}`, {
-      isAuthenticated,
-    });
-
-    if (renderCount.current > 10) {
-      console.error("⛔ INFINITE LOOP DETECTED in PublicRoute");
-    }
-  });
-
-  if (isAuthenticated) {
-    console.log(
-      "[PublicRoute] Already authenticated, redirecting to",
-      redirectTo,
-    );
-    return <Navigate to={redirectTo} replace />;
+  // If already authenticated, redirect to dashboard
+  if (isAuthenticated && user && token) {
+    // Get the page they were trying to access before login
+    const from = location.state?.from?.pathname || "/dashboard";
+    return <Navigate to={from} replace />;
   }
 
-  console.log("[PublicRoute] Not authenticated, rendering login");
+  // Not authenticated - show public content (login page)
   return children;
-};
+}
 
 /**
- * Role-based Route Wrappers
+ * Role Guard Component
+ * Restricts access based on user role
+ * Use this INSIDE protected routes for role-specific pages
+ *
+ * @param {Object} props
+ * @param {string|string[]} props.allowedRoles - Allowed role(s)
+ * @param {React.ReactNode} props.children - Child components
+ * @param {string} [props.redirectTo="/unauthorized"] - Where to redirect if not allowed
+ * @returns {React.ReactNode}
+ *
+ * @example
+ * // Single role
+ * <RoleGuard allowedRoles="admin">
+ *   <AdminPanel />
+ * </RoleGuard>
+ *
+ * @example
+ * // Multiple roles
+ * <RoleGuard allowedRoles={['admin', 'superadmin']}>
+ *   <ManagementPanel />
+ * </RoleGuard>
  */
+export function RoleGuard({
+  allowedRoles,
+  children,
+  redirectTo = "/unauthorized",
+}) {
+  const { user } = useAuthStore();
+  const location = useLocation();
 
-export const SuperAdminRoute = ({ children }) => {
-  console.log("[SuperAdminRoute] Rendering");
-  return <ProtectedRoute allowedRoles="superAdmin">{children}</ProtectedRoute>;
-};
+  if (!user || !user.role) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
-export const AdminRoute = ({ children }) => {
-  console.log("[AdminRoute] Rendering");
-  return (
-    <ProtectedRoute allowedRoles={["superAdmin", "admin"]}>
-      {children}
-    </ProtectedRoute>
+  // Normalize roles
+  const userRole = user.role.toLowerCase().replace(/[_\s-]/g, "");
+  const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+  const normalizedAllowedRoles = roles.map((r) =>
+    r.toLowerCase().replace(/[_\s-]/g, ""),
   );
-};
 
-export const TeacherRoute = ({ children }) => {
-  console.log("[TeacherRoute] Rendering");
-  return <ProtectedRoute allowedRoles="teacher">{children}</ProtectedRoute>;
-};
+  // Check if user has required role
+  const hasAccess = normalizedAllowedRoles.includes(userRole);
 
+  if (!hasAccess) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  // Has access - render protected content
+  return children;
+}
+
+/**
+ * Permission Guard Component
+ * Uses role hierarchy instead of exact role match
+ * SuperAdmin > Admin > Teacher
+ *
+ * @param {Object} props
+ * @param {string} props.minimumRole - Minimum required role
+ * @param {React.ReactNode} props.children - Child components
+ * @param {string} [props.redirectTo="/unauthorized"] - Where to redirect if not allowed
+ * @returns {React.ReactNode}
+ *
+ * @example
+ * // Admin and SuperAdmin can access
+ * <PermissionGuard minimumRole="admin">
+ *   <AdminPanel />
+ * </PermissionGuard>
+ */
+export function PermissionGuard({
+  minimumRole,
+  children,
+  redirectTo = "/unauthorized",
+}) {
+  const { user } = useAuthStore();
+  const location = useLocation();
+
+  if (!user || !user.role) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Role hierarchy
+  const roleHierarchy = {
+    teacher: 0,
+    admin: 1,
+    superadmin: 2,
+  };
+
+  const userRole = user.role.toLowerCase().replace(/[_\s-]/g, "");
+  const minRole = minimumRole.toLowerCase().replace(/[_\s-]/g, "");
+
+  const userLevel = roleHierarchy[userRole] ?? -1;
+  const minLevel = roleHierarchy[minRole] ?? Infinity;
+
+  const hasAccess = userLevel >= minLevel;
+
+  if (!hasAccess) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  // Has permission - render protected content
+  return children;
+}
+
+// Export default
 export default ProtectedRoute;

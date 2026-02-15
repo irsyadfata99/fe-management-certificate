@@ -36,42 +36,6 @@ export const SIDEBAR_MENUS = {
       icon: Building2,
       description: "Manage all branches",
     },
-    {
-      label: "Divisions",
-      path: "/divisions",
-      icon: Layers,
-      description: "Age groups & divisions",
-    },
-    {
-      label: "Modules",
-      path: "/modules",
-      icon: BookOpen,
-      description: "Course modules",
-    },
-    {
-      label: "Teachers",
-      path: "/teachers",
-      icon: Users,
-      description: "Teacher management",
-    },
-    {
-      label: "Certificates",
-      path: "/certificates/stock",
-      icon: Award,
-      description: "Certificate stock",
-    },
-    {
-      label: "Students",
-      path: "/students",
-      icon: UserCircle,
-      description: "Student records",
-    },
-    {
-      label: "Backup",
-      path: "/backup",
-      icon: Database,
-      description: "Database backup",
-    },
   ],
 
   admin: [
@@ -109,12 +73,6 @@ export const SIDEBAR_MENUS = {
       path: "/modules",
       icon: BookOpen,
       description: "Course modules",
-    },
-    {
-      label: "Students",
-      path: "/students",
-      icon: UserCircle,
-      description: "Student records",
     },
     {
       label: "Backup",
@@ -160,13 +118,51 @@ export const SIDEBAR_MENUS = {
 
 /**
  * Get menu items for current user role
- * @param {string} role - User role (superadmin, admin, teacher)
+ * FIX: Handle various role formats from backend (SuperAdmin, Admin, Teacher)
+ *
+ * @param {string} role - User role (SuperAdmin, Admin, Teacher, or any case variation)
  * @returns {Array} Menu items
+ *
+ * @example
+ * getMenuItems('SuperAdmin')  // ✅ Works
+ * getMenuItems('super_admin') // ✅ Works
+ * getMenuItems('SUPERADMIN')  // ✅ Works
+ * getMenuItems('Admin')       // ✅ Works
+ * getMenuItems('Teacher')     // ✅ Works
  */
 export const getMenuItems = (role) => {
-  if (!role) return [];
-  const normalizedRole = role.toLowerCase();
-  return SIDEBAR_MENUS[normalizedRole] || [];
+  if (!role) {
+    console.warn("[Sidebar] No role provided to getMenuItems");
+    return [];
+  }
+
+  // Normalize role: lowercase and remove spaces/underscores/dashes
+  // Handles: SuperAdmin, super_admin, super-admin, SUPERADMIN, etc.
+  const normalizedRole = role.toLowerCase().replace(/[_\s-]/g, "");
+
+  // Map normalized role to menu key
+  const roleMap = {
+    superadmin: "superadmin",
+    admin: "admin",
+    teacher: "teacher",
+  };
+
+  const mappedRole = roleMap[normalizedRole];
+
+  // Debug logging (helpful for troubleshooting)
+  console.log("[Sidebar] Original role:", role);
+  console.log("[Sidebar] Normalized role:", normalizedRole);
+  console.log("[Sidebar] Mapped role:", mappedRole);
+  console.log("[Sidebar] Menu items found:", !!SIDEBAR_MENUS[mappedRole]);
+
+  // Return menu items or empty array if role not found
+  const menuItems = SIDEBAR_MENUS[mappedRole] || [];
+
+  if (!menuItems.length) {
+    console.warn(`[Sidebar] No menu items found for role: ${role}`);
+  }
+
+  return menuItems;
 };
 
 /**
