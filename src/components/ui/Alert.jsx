@@ -1,6 +1,7 @@
 /**
  * Alert Component
  * Notification/alert boxes with variants
+ * FIXED: Better text contrast in dark mode
  */
 
 import { cn } from "@/utils/helpers/cn";
@@ -18,27 +19,27 @@ const alertVariants = {
   },
   info: {
     container:
-      "bg-info-50 border-info-200 text-info-900 dark:bg-info-950 dark:border-info-800 dark:text-info-100",
+      "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100",
     icon: Info,
-    iconColor: "text-info-500 dark:text-info-400",
+    iconColor: "text-blue-500 dark:text-blue-400",
   },
   success: {
     container:
-      "bg-success-50 border-success-200 text-success-900 dark:bg-success-950 dark:border-success-800 dark:text-success-100",
+      "bg-green-50 border-green-200 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-100",
     icon: CheckCircle,
-    iconColor: "text-success-500 dark:text-success-400",
+    iconColor: "text-green-600 dark:text-green-400",
   },
   warning: {
     container:
-      "bg-warning-50 border-warning-200 text-warning-900 dark:bg-warning-950 dark:border-warning-800 dark:text-warning-100",
+      "bg-yellow-50 border-yellow-200 text-yellow-900 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-100",
     icon: AlertTriangle,
-    iconColor: "text-warning-500 dark:text-warning-400",
+    iconColor: "text-yellow-600 dark:text-yellow-400",
   },
   danger: {
     container:
-      "bg-danger-50 border-danger-200 text-danger-900 dark:bg-danger-950 dark:border-danger-800 dark:text-danger-100",
+      "bg-red-50 border-red-200 text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-100",
     icon: AlertCircle,
-    iconColor: "text-danger-500 dark:text-danger-400",
+    iconColor: "text-red-600 dark:text-red-400",
   },
 };
 
@@ -71,7 +72,7 @@ export const Alert = ({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        {title && <h5 className="font-medium mb-1 text-sm">{title}</h5>}
+        {title && <h5 className="font-semibold mb-1 text-sm">{title}</h5>}
         <div className="text-sm">{children}</div>
       </div>
 

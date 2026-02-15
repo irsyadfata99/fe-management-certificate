@@ -7,7 +7,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ProtectedRoute, PublicRoute } from "@/components/auth/ProtectedRoute";
 
 // Layouts
-import AppLayout from "@/components/layout/AppLayout";
+import { Layout } from "@/components/layout/Layout";
 
 // Auth Pages
 import LoginPage from "@/pages/auth/LoginPage";
@@ -53,7 +53,7 @@ export const router = createBrowserRouter([
     path: "/",
     element: (
       <ProtectedRoute>
-        <AppLayout />
+        <Layout />
       </ProtectedRoute>
     ),
     children: [
