@@ -127,25 +127,6 @@ function SuperAdminDashboard() {
             Welcome back, {user?.full_name || user?.username}
           </p>
         </div>
-
-        {/* Quick Actions */}
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Download className="w-4 h-4" />}
-          >
-            Export Report
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={() => setShowAddBranchModal(true)}
-          >
-            Add Branch
-          </Button>
-        </div>
       </div>
 
       {/* Stats Cards */}

@@ -1,7 +1,7 @@
 /**
  * Router Configuration
  * App routes dengan role-based protection
- * UPDATED: Added BranchesPage, TeachersPage, CertificatesPage
+ * UPDATED: Added ProfilePage
  */
 
 import { createBrowserRouter, Navigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import { Layout } from "@/components/layout/Layout";
 
 // Auth Pages
 import LoginPage from "@/pages/auth/LoginPage";
+import ProfilePage from "@/pages/auth/ProfilePage";
 
 // Dashboard
 import DashboardPage from "@/pages/DashboardPage";
@@ -75,6 +76,12 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <DashboardPage />,
+      },
+
+      // Profile (All Roles)
+      {
+        path: "profile",
+        element: <ProfilePage />,
       },
 
       // ======================================================================

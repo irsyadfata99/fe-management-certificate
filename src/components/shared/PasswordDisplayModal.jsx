@@ -1,7 +1,9 @@
 /**
- * PasswordDisplayModal Component
+ * PasswordDisplayModal Component - FIXED VERSION
  * Reusable modal for displaying generated passwords
  * Used in Branches and Teachers pages
+ *
+ * FIX: Changed initial showPassword state to false
  */
 
 import { Modal, ModalFooter } from "@/components/ui/Modal";
@@ -29,7 +31,8 @@ export const PasswordDisplayModal = ({
   title = "Password Generated",
 }) => {
   const [copied, setCopied] = useState(false);
-  const [showPassword, setShowPassword] = useState(true);
+  // ✅ FIX: Change initial state to false so password is hidden by default
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -47,7 +50,8 @@ export const PasswordDisplayModal = ({
 
   const handleClose = () => {
     setCopied(false);
-    setShowPassword(true);
+    // ✅ FIX: Reset to false (hidden) when closing
+    setShowPassword(false);
     onClose();
   };
 
@@ -84,14 +88,20 @@ export const PasswordDisplayModal = ({
             Generated Password
           </label>
           <div className="relative">
-            <div
-              className={cn(
-                "px-4 py-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg font-mono text-lg",
-                "text-neutral-900 dark:text-neutral-100",
-                "pr-24",
-              )}
-            >
-              {showPassword ? password : "••••••••••••"}
+            <div className="px-4 py-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg pr-24">
+              {/* Hidden password (always rendered for copy functionality) */}
+              <input
+                type="text"
+                value={password}
+                readOnly
+                className="sr-only"
+                aria-hidden="true"
+              />
+
+              {/* Visible password text */}
+              <div className="font-mono text-lg text-neutral-900 dark:text-neutral-100">
+                {showPassword ? password : "••••••••••••"}
+              </div>
             </div>
 
             {/* Action Buttons */}
@@ -102,6 +112,7 @@ export const PasswordDisplayModal = ({
                 onClick={() => setShowPassword(!showPassword)}
                 className="p-2 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-neutral-600 dark:text-neutral-400"
                 title={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
                   <EyeOff className="w-4 h-4" />
@@ -121,6 +132,7 @@ export const PasswordDisplayModal = ({
                     : "hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400",
                 )}
                 title="Copy password"
+                aria-label="Copy password"
               >
                 {copied ? (
                   <Check className="w-4 h-4" />
