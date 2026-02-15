@@ -1,307 +1,72 @@
 /**
- * UI Store - Zustand
- * Manages UI state (sidebar, modals, loading states)
- * NO persistence - reset on page refresh
+ * UI Store
+ * Global UI state management (Zustand)
  */
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 /**
  * Initial state
  */
 const initialState = {
-  // Sidebar
-  isSidebarOpen: true,
-  isSidebarCollapsed: false,
+  // Theme: 'light' | 'dark' | 'system'
+  theme: "system",
 
-  // Modals
-  modals: {},
+  // Sidebar state (for mobile/responsive)
+  sidebarOpen: true,
+  sidebarCollapsed: false,
 
-  // Loading states
-  globalLoading: false,
-  loadingMessage: "",
-
-  // Page title
-  pageTitle: "",
+  // Mobile breakpoint
+  isMobile: false,
 };
 
 /**
  * UI Store
- * @typedef {Object} UIState
- * @property {boolean} isSidebarOpen - Sidebar visibility
- * @property {boolean} isSidebarCollapsed - Sidebar collapsed state
- * @property {Object} modals - Modal states by ID
- * @property {boolean} globalLoading - Global loading state
- * @property {string} loadingMessage - Loading message
- * @property {string} pageTitle - Current page title
- * @property {Function} toggleSidebar - Toggle sidebar
- * @property {Function} setSidebarOpen - Set sidebar open state
- * @property {Function} setSidebarCollapsed - Set sidebar collapsed state
- * @property {Function} openModal - Open modal by ID
- * @property {Function} closeModal - Close modal by ID
- * @property {Function} toggleModal - Toggle modal by ID
- * @property {Function} closeAllModals - Close all modals
- * @property {Function} setGlobalLoading - Set global loading
- * @property {Function} setPageTitle - Set page title
  */
-export const useUIStore = create((set) => ({
-  // ==========================================================================
-  // STATE
-  // ==========================================================================
-  ...initialState,
+export const useUIStore = create(
+  persist(
+    (set, get) => ({
+      ...initialState,
 
-  // ==========================================================================
-  // SIDEBAR ACTIONS
-  // ==========================================================================
+      // Theme Actions
+      setTheme: (theme) => set({ theme }),
 
-  /**
-   * Toggle sidebar open/close
-   *
-   * @example
-   * const { toggleSidebar } = useUIStore();
-   * toggleSidebar();
-   */
-  toggleSidebar: () => {
-    set((state) => ({ isSidebarOpen: !state.isSidebarOpen }));
-  },
+      toggleTheme: () => {
+        const currentTheme = get().theme;
+        const effectiveTheme =
+          currentTheme === "system"
+            ? window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : currentTheme;
 
-  /**
-   * Set sidebar open state
-   * @param {boolean} isOpen - Sidebar open state
-   *
-   * @example
-   * const { setSidebarOpen } = useUIStore();
-   * setSidebarOpen(true);
-   */
-  setSidebarOpen: (isOpen) => {
-    set({ isSidebarOpen: isOpen });
-  },
-
-  /**
-   * Set sidebar collapsed state (for desktop)
-   * @param {boolean} isCollapsed - Sidebar collapsed state
-   *
-   * @example
-   * const { setSidebarCollapsed } = useUIStore();
-   * setSidebarCollapsed(true);
-   */
-  setSidebarCollapsed: (isCollapsed) => {
-    set({ isSidebarCollapsed: isCollapsed });
-  },
-
-  /**
-   * Toggle sidebar collapsed state
-   *
-   * @example
-   * const { toggleSidebarCollapsed } = useUIStore();
-   * toggleSidebarCollapsed();
-   */
-  toggleSidebarCollapsed: () => {
-    set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed }));
-  },
-
-  // ==========================================================================
-  // MODAL ACTIONS
-  // ==========================================================================
-
-  /**
-   * Open modal by ID
-   * @param {string} modalId - Modal identifier
-   * @param {Object} [data] - Optional data to pass to modal
-   *
-   * @example
-   * const { openModal } = useUIStore();
-   * openModal('create-branch', { parentId: 1 });
-   */
-  openModal: (modalId, data = null) => {
-    set((state) => ({
-      modals: {
-        ...state.modals,
-        [modalId]: { isOpen: true, data },
+        set({ theme: effectiveTheme === "dark" ? "light" : "dark" });
       },
-    }));
-  },
 
-  /**
-   * Close modal by ID
-   * @param {string} modalId - Modal identifier
-   *
-   * @example
-   * const { closeModal } = useUIStore();
-   * closeModal('create-branch');
-   */
-  closeModal: (modalId) => {
-    set((state) => ({
-      modals: {
-        ...state.modals,
-        [modalId]: { isOpen: false, data: null },
-      },
-    }));
-  },
+      // Sidebar Actions
+      setSidebarOpen: (open) => set({ sidebarOpen: open }),
 
-  /**
-   * Toggle modal by ID
-   * @param {string} modalId - Modal identifier
-   * @param {Object} [data] - Optional data to pass to modal
-   *
-   * @example
-   * const { toggleModal } = useUIStore();
-   * toggleModal('filters');
-   */
-  toggleModal: (modalId, data = null) => {
-    set((state) => {
-      const currentModal = state.modals[modalId];
-      const isCurrentlyOpen = currentModal?.isOpen || false;
+      toggleSidebar: () =>
+        set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
-      return {
-        modals: {
-          ...state.modals,
-          [modalId]: {
-            isOpen: !isCurrentlyOpen,
-            data: !isCurrentlyOpen ? data : null,
-          },
-        },
-      };
-    });
-  },
+      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
 
-  /**
-   * Close all modals
-   *
-   * @example
-   * const { closeAllModals } = useUIStore();
-   * closeAllModals();
-   */
-  closeAllModals: () => {
-    set({ modals: {} });
-  },
+      toggleSidebarCollapsed: () =>
+        set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 
-  /**
-   * Get modal state by ID
-   * Helper untuk components
-   * @param {string} modalId - Modal identifier
-   * @returns {Object} Modal state { isOpen, data }
-   */
-  getModalState: (modalId) => (state) => {
-    return state.modals[modalId] || { isOpen: false, data: null };
-  },
+      // Mobile Actions
+      setIsMobile: (isMobile) => set({ isMobile }),
 
-  // ==========================================================================
-  // LOADING ACTIONS
-  // ==========================================================================
-
-  /**
-   * Set global loading state
-   * @param {boolean} isLoading - Loading state
-   * @param {string} [message=''] - Loading message
-   *
-   * @example
-   * const { setGlobalLoading } = useUIStore();
-   * setGlobalLoading(true, 'Memuat data...');
-   */
-  setGlobalLoading: (isLoading, message = "") => {
-    set({
-      globalLoading: isLoading,
-      loadingMessage: isLoading ? message : "",
-    });
-  },
-
-  // ==========================================================================
-  // PAGE TITLE
-  // ==========================================================================
-
-  /**
-   * Set page title
-   * @param {string} title - Page title
-   *
-   * @example
-   * const { setPageTitle } = useUIStore();
-   * setPageTitle('Manajemen Branch');
-   */
-  setPageTitle: (title) => {
-    set({ pageTitle: title });
-
-    // Also update document title
-    if (title) {
-      document.title = `${title} - Certificate Management`;
-    } else {
-      document.title = "Certificate Management";
-    }
-  },
-
-  // ==========================================================================
-  // RESET
-  // ==========================================================================
-
-  /**
-   * Reset UI state to initial
-   *
-   * @example
-   * const { resetUI } = useUIStore();
-   * resetUI();
-   */
-  resetUI: () => {
-    set(initialState);
-  },
-}));
-
-/**
- * Selectors untuk optimize re-renders
- */
-
-/**
- * Get sidebar open state
- * @returns {boolean}
- *
- * @example
- * const isSidebarOpen = useUIStore(selectIsSidebarOpen);
- */
-export const selectIsSidebarOpen = (state) => state.isSidebarOpen;
-
-/**
- * Get sidebar collapsed state
- * @returns {boolean}
- *
- * @example
- * const isCollapsed = useUIStore(selectIsSidebarCollapsed);
- */
-export const selectIsSidebarCollapsed = (state) => state.isSidebarCollapsed;
-
-/**
- * Get modal state by ID
- * @param {string} modalId - Modal identifier
- * @returns {Function} Selector function
- *
- * @example
- * const modalState = useUIStore(selectModal('create-branch'));
- */
-export const selectModal = (modalId) => (state) => {
-  return state.modals[modalId] || { isOpen: false, data: null };
-};
-
-/**
- * Get global loading state
- * @returns {boolean}
- *
- * @example
- * const isLoading = useUIStore(selectGlobalLoading);
- */
-export const selectGlobalLoading = (state) => state.globalLoading;
-
-/**
- * Get loading message
- * @returns {string}
- *
- * @example
- * const message = useUIStore(selectLoadingMessage);
- */
-export const selectLoadingMessage = (state) => state.loadingMessage;
-
-/**
- * Get page title
- * @returns {string}
- *
- * @example
- * const title = useUIStore(selectPageTitle);
- */
-export const selectPageTitle = (state) => state.pageTitle;
+      // Reset to initial state
+      reset: () => set(initialState),
+    }),
+    {
+      name: "ui-storage", // localStorage key
+      partialize: (state) => ({
+        theme: state.theme,
+        sidebarCollapsed: state.sidebarCollapsed,
+      }), // Only persist theme and sidebarCollapsed
+    },
+  ),
+);
