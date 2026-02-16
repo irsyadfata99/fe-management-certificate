@@ -18,6 +18,9 @@ export const useBranches = (params = {}) => {
     // ✅ FIX: Transform response to match expected structure
     select: (data) => {
       console.log("[useBranches] Raw data:", data);
+      console.log("[useBranches] Data type:", typeof data);
+      console.log("[useBranches] Is array:", Array.isArray(data));
+      console.log("[useBranches] Keys:", data ? Object.keys(data) : "null");
 
       // Backend returns: { head_branch: [...], sub_branches: [...] }
       // OR could return: { branches: [...] }
@@ -42,27 +45,39 @@ export const useBranches = (params = {}) => {
           sub: branches.filter((b) => !b.is_head_branch).length,
         };
       }
-      // Handle old backend structure (if exists)
-      else if (data.branches) {
+      // ✅ FIX: Ensure branches is array
+      else if (data.branches && Array.isArray(data.branches)) {
         console.log("[useBranches] Using branches array structure");
         branches = data.branches;
         stats = data.stats || {};
         pagination = data.pagination || {};
       }
-      // Fallback: treat data as array
+      // Fallback: treat data itself as array
       else if (Array.isArray(data)) {
         console.log("[useBranches] Data is array, using directly");
         branches = data;
       }
+      // ✅ FIX: If data.branches exists but is not array, log error
+      else if (data.branches && !Array.isArray(data.branches)) {
+        console.error("[useBranches] ❌ data.branches is not an array:", typeof data.branches);
+        branches = [];
+      }
+      // Last resort: empty array
+      else {
+        console.warn("[useBranches] ⚠️ Could not extract branches from data");
+        branches = [];
+      }
 
       console.log("[useBranches] Processed branches:", {
         count: branches.length,
+        isArray: Array.isArray(branches),
         hasStats: Object.keys(stats).length > 0,
         hasPagination: Object.keys(pagination).length > 0,
       });
 
+      // ✅ SAFETY: Ensure we always return an array
       return {
-        branches,
+        branches: Array.isArray(branches) ? branches : [],
         stats,
         pagination,
       };
