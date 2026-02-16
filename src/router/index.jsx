@@ -1,7 +1,7 @@
 /**
  * Router Configuration
  * App routes dengan role-based protection
- * UPDATED: Added ProfilePage
+ * UPDATED: Added CertificateStockPage
  */
 
 import { createBrowserRouter, Navigate } from "react-router-dom";
@@ -23,6 +23,7 @@ import BranchesPage from "@/pages/branches/BranchesPage";
 // Admin Pages
 import TeachersPage from "@/pages/teachers/TeachersPage";
 import CertificatesPage from "@/pages/certificates/CertificatesPage";
+import CertificateStockPage from "@/pages/certificates/CertificateStockPage";
 
 // Showcase (Development)
 import ComponentShowcasePage from "@/pages/showcase/ComponentShowcasePage";
@@ -107,6 +108,8 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+
+      // Certificate Management (CRUD operations)
       {
         path: "certificates",
         element: (
@@ -116,12 +119,12 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Alternative route for certificates (matching sidebar config)
+      // Certificate Stock Monitoring (Dashboard)
       {
         path: "certificates/stock",
         element: (
           <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
-            <CertificatesPage />
+            <CertificateStockPage />
           </ProtectedRoute>
         ),
       },

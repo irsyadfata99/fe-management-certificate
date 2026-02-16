@@ -3,25 +3,12 @@
  * Role-based menu items untuk SuperAdmin, Admin, dan Teacher
  */
 
-import {
-  LayoutDashboard,
-  Building2,
-  Layers,
-  BookOpen,
-  Users,
-  Award,
-  FileText,
-  UserCircle,
-  Package,
-  ClipboardList,
-  Printer,
-  Clock,
-  Database,
-} from "lucide-react";
+import { LayoutDashboard, Building2, Layers, BookOpen, Users, Award, FileText, UserCircle, Package, ClipboardList, Printer, Clock, Database } from "lucide-react";
 
 /**
  * Menu structure per role
- * Format: { label, path, icon, badge? }
+ * Format: { label, path, icon, badge?, children? }
+ * children: sub-menu items (untuk grouped navigation)
  */
 export const SIDEBAR_MENUS = {
   superadmin: [
@@ -44,17 +31,31 @@ export const SIDEBAR_MENUS = {
       path: "/dashboard",
       icon: LayoutDashboard,
     },
+    // GROUPED: Certificate menu dengan 3 sub-menu
     {
-      label: "Certificate Stock",
-      path: "/certificates/stock",
-      icon: Package,
-      description: "Manage stock",
-    },
-    {
-      label: "Certificate Logs",
-      path: "/certificates/logs",
-      icon: ClipboardList,
-      description: "Audit logs",
+      label: "Certificates",
+      icon: Award,
+      description: "Manage certificates",
+      children: [
+        {
+          label: "Certificate Stock",
+          path: "/certificates/stock",
+          icon: Package,
+          description: "Monitor stock",
+        },
+        {
+          label: "Certificates",
+          path: "/certificates",
+          icon: Award,
+          description: "Manage certificates",
+        },
+        {
+          label: "Certificate Logs",
+          path: "/certificates/logs",
+          icon: ClipboardList,
+          description: "Audit logs",
+        },
+      ],
     },
     {
       label: "Teachers",
@@ -99,7 +100,7 @@ export const SIDEBAR_MENUS = {
       path: "/certificates/reservations",
       icon: Clock,
       description: "Active reservations",
-      badge: "dynamic", // Will show count
+      badge: "dynamic",
     },
     {
       label: "Print History",
@@ -119,16 +120,6 @@ export const SIDEBAR_MENUS = {
 /**
  * Get menu items for current user role
  * FIX: Handle various role formats from backend (SuperAdmin, Admin, Teacher)
- *
- * @param {string} role - User role (SuperAdmin, Admin, Teacher, or any case variation)
- * @returns {Array} Menu items
- *
- * @example
- * getMenuItems('SuperAdmin')  // ✅ Works
- * getMenuItems('super_admin') // ✅ Works
- * getMenuItems('SUPERADMIN')  // ✅ Works
- * getMenuItems('Admin')       // ✅ Works
- * getMenuItems('Teacher')     // ✅ Works
  */
 export const getMenuItems = (role) => {
   if (!role) {
@@ -136,11 +127,8 @@ export const getMenuItems = (role) => {
     return [];
   }
 
-  // Normalize role: lowercase and remove spaces/underscores/dashes
-  // Handles: SuperAdmin, super_admin, super-admin, SUPERADMIN, etc.
   const normalizedRole = role.toLowerCase().replace(/[_\s-]/g, "");
 
-  // Map normalized role to menu key
   const roleMap = {
     superadmin: "superadmin",
     admin: "admin",
@@ -149,13 +137,11 @@ export const getMenuItems = (role) => {
 
   const mappedRole = roleMap[normalizedRole];
 
-  // Debug logging (helpful for troubleshooting)
   console.log("[Sidebar] Original role:", role);
   console.log("[Sidebar] Normalized role:", normalizedRole);
   console.log("[Sidebar] Mapped role:", mappedRole);
   console.log("[Sidebar] Menu items found:", !!SIDEBAR_MENUS[mappedRole]);
 
-  // Return menu items or empty array if role not found
   const menuItems = SIDEBAR_MENUS[mappedRole] || [];
 
   if (!menuItems.length) {
