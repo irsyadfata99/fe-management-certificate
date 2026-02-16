@@ -13,7 +13,17 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Archive, Clock, Printer, TrendingDown, AlertTriangle, ArrowRightLeft, Settings, ExternalLink } from "lucide-react";
+import {
+  Package,
+  Archive,
+  Clock,
+  Printer,
+  TrendingDown,
+  AlertTriangle,
+  ArrowRightLeft,
+  Settings,
+  ExternalLink,
+} from "lucide-react";
 
 // Hooks
 import { useCertificateStock, useStockAlerts } from "@/hooks";
@@ -113,15 +123,24 @@ function GlobalStatsCards({ globalStats }) {
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", stat.bgColor)}>
+                  <div
+                    className={cn(
+                      "w-12 h-12 rounded-lg flex items-center justify-center",
+                      stat.bgColor,
+                    )}
+                  >
                     <Icon className={cn("w-6 h-6", stat.iconColor)} />
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-neutral-600 dark:text-neutral-400 truncate">{stat.label}</dt>
+                    <dt className="text-sm font-medium text-neutral-600 dark:text-neutral-400 truncate">
+                      {stat.label}
+                    </dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{formatNumber(stat.value)}</div>
+                      <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+                        {formatNumber(stat.value)}
+                      </div>
                     </dd>
                   </dl>
                 </div>
@@ -144,7 +163,9 @@ function LowStockAlerts({ alerts, alertsLoading, threshold }) {
   // Group by severity
   const critical = alerts.filter((a) => a.in_stock === 0);
   const high = alerts.filter((a) => a.in_stock > 0 && a.in_stock <= 5);
-  const medium = alerts.filter((a) => a.in_stock > 5 && a.in_stock <= threshold);
+  const medium = alerts.filter(
+    (a) => a.in_stock > 5 && a.in_stock <= threshold,
+  );
 
   return (
     <div className="space-y-3">
@@ -156,16 +177,30 @@ function LowStockAlerts({ alerts, alertsLoading, threshold }) {
               <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-base mb-2">
-                  Critical: Out of Stock ({critical.length} {critical.length === 1 ? "branch" : "branches"})
+                  Critical: Out of Stock ({critical.length}{" "}
+                  {critical.length === 1 ? "branch" : "branches"})
                 </h3>
                 <div className="space-y-2">
                   {critical.map((alert) => (
-                    <div key={alert.branch_id} className="flex items-center justify-between gap-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <div
+                      key={alert.branch_id}
+                      className="flex items-center justify-between gap-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"
+                    >
                       <div>
-                        <p className="font-medium text-sm">{alert.branch_name}</p>
-                        <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">No certificates available</p>
+                        <p className="font-medium text-sm">
+                          {alert.branch_name}
+                        </p>
+                        <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">
+                          No certificates available
+                        </p>
                       </div>
-                      <Button size="sm" variant="primary" leftIcon={<ArrowRightLeft className="w-3 h-3" />} as={Link} to={`/certificates?migrate=true&toBranchId=${alert.branch_id}`}>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        leftIcon={<ArrowRightLeft className="w-3 h-3" />}
+                        as={Link}
+                        to={`/certificates?migrate=true&toBranchId=${alert.branch_id}`}
+                      >
                         Migrate Here
                       </Button>
                     </div>
@@ -185,16 +220,30 @@ function LowStockAlerts({ alerts, alertsLoading, threshold }) {
               <TrendingDown className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-base mb-2">
-                  High Priority: Very Low Stock ({high.length} {high.length === 1 ? "branch" : "branches"})
+                  High Priority: Very Low Stock ({high.length}{" "}
+                  {high.length === 1 ? "branch" : "branches"})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {high.map((alert) => (
-                    <div key={alert.branch_id} className="flex items-center justify-between gap-3 p-2.5 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                    <div
+                      key={alert.branch_id}
+                      className="flex items-center justify-between gap-3 p-2.5 bg-orange-50 dark:bg-orange-900/20 rounded-lg"
+                    >
                       <div>
-                        <p className="font-medium text-sm">{alert.branch_name}</p>
-                        <p className="text-xs text-orange-700 dark:text-orange-300">Only {alert.in_stock} left</p>
+                        <p className="font-medium text-sm">
+                          {alert.branch_name}
+                        </p>
+                        <p className="text-xs text-orange-700 dark:text-orange-300">
+                          Only {alert.in_stock} left
+                        </p>
                       </div>
-                      <Button size="sm" variant="outline" leftIcon={<ArrowRightLeft className="w-3 h-3" />} as={Link} to={`/certificates?migrate=true&toBranchId=${alert.branch_id}`}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<ArrowRightLeft className="w-3 h-3" />}
+                        as={Link}
+                        to={`/certificates?migrate=true&toBranchId=${alert.branch_id}`}
+                      >
                         Migrate
                       </Button>
                     </div>
@@ -213,10 +262,13 @@ function LowStockAlerts({ alerts, alertsLoading, threshold }) {
             <TrendingDown className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-base mb-1">
-                Low Stock Warning ({medium.length} {medium.length === 1 ? "branch" : "branches"})
+                Low Stock Warning ({medium.length}{" "}
+                {medium.length === 1 ? "branch" : "branches"})
               </h3>
               <p className="text-sm opacity-90">
-                {medium.map((a) => a.branch_name).join(", ")} {medium.length === 1 ? "has" : "have"} stock below threshold ({threshold} certificates)
+                {medium.map((a) => a.branch_name).join(", ")}{" "}
+                {medium.length === 1 ? "has" : "have"} stock below threshold (
+                {threshold} certificates)
               </p>
             </div>
           </div>
@@ -238,11 +290,24 @@ function ThresholdConfig({ threshold, setThreshold }) {
         </div>
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Low Stock Threshold</h3>
-            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{threshold}</span>
+            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
+              Low Stock Threshold
+            </h3>
+            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+              {threshold}
+            </span>
           </div>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">Branches with stock at or below this level will trigger alerts</p>
-          <Slider value={threshold} onChange={setThreshold} min={5} max={50} step={5} className="mb-2" />
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+            Branches with stock at or below this level will trigger alerts
+          </p>
+          <Slider
+            value={threshold}
+            onChange={setThreshold}
+            min={5}
+            max={50}
+            step={5}
+            className="mb-2"
+          />
           <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-500">
             <span>5</span>
             <span>50</span>
@@ -262,7 +327,9 @@ function BranchStockCards({ stock, stockLoading, threshold }) {
       <div className="glass-card-auto p-8">
         <div className="flex flex-col items-center justify-center">
           <Spinner size="lg" />
-          <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">Loading branch stock data...</p>
+          <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
+            Loading branch stock data...
+          </p>
         </div>
       </div>
     );
@@ -273,7 +340,9 @@ function BranchStockCards({ stock, stockLoading, threshold }) {
       <div className="glass-card-auto p-8">
         <div className="text-center">
           <Package className="w-12 h-12 text-neutral-400 dark:text-neutral-600 mx-auto mb-3" />
-          <p className="text-neutral-600 dark:text-neutral-400">No stock data available</p>
+          <p className="text-neutral-600 dark:text-neutral-400">
+            No stock data available
+          </p>
         </div>
       </div>
     );
@@ -290,16 +359,29 @@ function BranchStockCards({ stock, stockLoading, threshold }) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       {sortedStock.map((branch) => {
         const level = getStockLevel(branch.in_stock, threshold);
-        const progressPercentage = getProgressPercentage(branch.in_stock, branch.total);
+        const progressPercentage = getProgressPercentage(
+          branch.in_stock,
+          branch.total,
+        );
 
         return (
-          <div key={branch.branch_id} className={cn("glass-card-auto overflow-hidden border-2 transition-all hover:shadow-lg", level.borderColor)}>
+          <div
+            key={branch.branch_id}
+            className={cn(
+              "glass-card-auto overflow-hidden border-2 transition-all hover:shadow-lg",
+              level.borderColor,
+            )}
+          >
             <div className="p-5">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg text-neutral-900 dark:text-neutral-100">{branch.branch_name}</h3>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-0.5">{branch.branch_code || "N/A"}</p>
+                  <h3 className="font-semibold text-lg text-neutral-900 dark:text-neutral-100">
+                    {branch.branch_name}
+                  </h3>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-0.5">
+                    {branch.branch_code || "N/A"}
+                  </p>
                 </div>
                 <div className={cn("p-2 rounded-lg", level.bgColor)}>
                   <Archive className={cn("w-5 h-5", level.color)} />
@@ -309,12 +391,30 @@ function BranchStockCards({ stock, stockLoading, threshold }) {
               {/* Stock Count */}
               <div className="mb-4">
                 <div className="flex items-baseline gap-2">
-                  <span className={cn("text-3xl font-bold", level.color)}>{formatNumber(branch.in_stock)}</span>
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">/ {formatNumber(branch.total)} total</span>
+                  <span className={cn("text-3xl font-bold", level.color)}>
+                    {formatNumber(branch.in_stock)}
+                  </span>
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    / {formatNumber(branch.total)} total
+                  </span>
                 </div>
                 {level.severity !== "good" && (
-                  <Badge variant={level.severity === "critical" ? "error" : level.severity === "high" ? "warning" : "default"} size="sm" className="mt-2">
-                    {level.severity === "critical" ? "Out of Stock" : level.severity === "high" ? "Very Low" : "Low Stock"}
+                  <Badge
+                    variant={
+                      level.severity === "critical"
+                        ? "error"
+                        : level.severity === "high"
+                          ? "warning"
+                          : "default"
+                    }
+                    size="sm"
+                    className="mt-2"
+                  >
+                    {level.severity === "critical"
+                      ? "Out of Stock"
+                      : level.severity === "high"
+                        ? "Very Low"
+                        : "Low Stock"}
                   </Badge>
                 )}
               </div>
@@ -326,23 +426,41 @@ function BranchStockCards({ stock, stockLoading, threshold }) {
                   <span className="font-medium">{progressPercentage}%</span>
                 </div>
                 <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-                  <div className={cn("h-full transition-all duration-500", level.progressColor)} style={{ width: `${progressPercentage}%` }} />
+                  <div
+                    className={cn(
+                      "h-full transition-all duration-500",
+                      level.progressColor,
+                    )}
+                    style={{ width: `${progressPercentage}%` }}
+                  />
                 </div>
               </div>
 
               {/* Stats Grid */}
               <div className="grid grid-cols-3 gap-3 pt-3 border-t border-neutral-200 dark:border-neutral-700">
                 <div>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Reserved</p>
-                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{formatNumber(branch.reserved)}</p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                    Reserved
+                  </p>
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    {formatNumber(branch.reserved)}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Printed</p>
-                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{formatNumber(branch.printed)}</p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                    Printed
+                  </p>
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    {formatNumber(branch.printed)}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Total</p>
-                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{formatNumber(branch.total)}</p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                    Total
+                  </p>
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    {formatNumber(branch.total)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -388,16 +506,12 @@ export default function CertificateStockPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Certificate Stock Monitor</h1>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">Real-time stock levels across all branches</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" leftIcon={<ExternalLink className="w-4 h-4" />} as={Link} to="/certificates">
-            Manage Certificates
-          </Button>
-          <Button variant="outline" leftIcon={<ExternalLink className="w-4 h-4" />} as={Link} to="/certificates/logs">
-            View Logs
-          </Button>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+            Certificate Stock Monitor
+          </h1>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+            Real-time stock levels across all branches
+          </p>
         </div>
       </div>
 
@@ -405,13 +519,21 @@ export default function CertificateStockPage() {
       <GlobalStatsCards globalStats={globalStats} />
 
       {/* Low Stock Alerts */}
-      <LowStockAlerts alerts={alerts} alertsLoading={alertsLoading} threshold={threshold} />
+      <LowStockAlerts
+        alerts={alerts}
+        alertsLoading={alertsLoading}
+        threshold={threshold}
+      />
 
       {/* Threshold Configuration */}
       <ThresholdConfig threshold={threshold} setThreshold={setThreshold} />
 
       {/* Branch Stock Cards */}
-      <BranchStockCards stock={stock} stockLoading={stockLoading} threshold={threshold} />
+      <BranchStockCards
+        stock={stock}
+        stockLoading={stockLoading}
+        threshold={threshold}
+      />
     </div>
   );
 }
