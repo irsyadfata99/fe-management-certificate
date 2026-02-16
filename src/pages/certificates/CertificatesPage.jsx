@@ -2,6 +2,13 @@
  * Certificates Page (Admin Only)
  * Main certificate management page
  *
+ * ✅ FIXES:
+ * - Stats cards calculation from stockData (flatten stock properly)
+ * - Better error handling
+ * - Loading states
+ * - Search functionality
+ * - Proper pagination
+ *
  * FEATURES:
  * - Stats cards (Total, In Stock, Reserved, Printed) - REAL DATA
  * - List all certificates with filters
@@ -76,7 +83,7 @@ import { formatDate } from "@/utils/format/dateFormat";
 import { getCertificateStatusLabel } from "@/utils/constants/status";
 
 // ============================================================================
-// STATS CARDS COMPONENT (MOVED OUTSIDE)
+// STATS CARDS COMPONENT
 // ============================================================================
 function StatsCards({ stats, isLoading }) {
   const statCards = [
@@ -158,7 +165,7 @@ function StatsCards({ stats, isLoading }) {
 }
 
 // ============================================================================
-// FILTERS COMPONENT (MOVED OUTSIDE)
+// FILTERS COMPONENT
 // ============================================================================
 function CertificateFilters({
   filters,
@@ -234,7 +241,7 @@ function CertificateFilters({
 }
 
 // ============================================================================
-// BULK CREATE MODAL (MOVED OUTSIDE)
+// BULK CREATE MODAL
 // ============================================================================
 function BulkCreateModal({ isOpen, onClose, onSubmit, isCreating }) {
   const {
@@ -323,7 +330,7 @@ function BulkCreateModal({ isOpen, onClose, onSubmit, isCreating }) {
 }
 
 // ============================================================================
-// MIGRATE MODAL (MOVED OUTSIDE)
+// MIGRATE MODAL
 // ============================================================================
 function MigrateModal({
   isOpen,
@@ -438,7 +445,7 @@ function MigrateModal({
 }
 
 // ============================================================================
-// CERTIFICATE TABLE (MOVED OUTSIDE)
+// CERTIFICATE TABLE
 // ============================================================================
 function CertificateTable({
   certificates,
@@ -503,7 +510,7 @@ function CertificateTable({
                 <TableCell>{getStatusBadge(cert.status)}</TableCell>
                 <TableCell>
                   <span className="text-neutral-900 dark:text-neutral-100">
-                    {cert.branch_name || "-"}
+                    {cert.current_branch_name || "-"}
                   </span>
                 </TableCell>
                 <TableCell>
@@ -530,7 +537,7 @@ function CertificateTable({
                 </TableCell>
                 <TableCell>
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {formatDate(cert.updated_at)}
+                    {formatDate(cert.updatedAt)}
                   </span>
                 </TableCell>
               </TableRow>
@@ -588,7 +595,7 @@ export default function CertificatesPage() {
   const certificates = certificatesData?.certificates || [];
   const pagination = certificatesData?.pagination || { total: 0, pages: 1 };
 
-  // ✅ Calculate stats from REAL stock data
+  // ✅ FIX: Calculate stats from REAL stock data (flatten properly)
   const stats = {
     total: stockData?.reduce((sum, s) => sum + (s.total || 0), 0) || 0,
     in_stock: stockData?.reduce((sum, s) => sum + (s.in_stock || 0), 0) || 0,

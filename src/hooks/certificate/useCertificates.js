@@ -1,13 +1,11 @@
 /**
  * Certificate Query Hooks (Admin)
  *
- * FIXES:
- *  1. Tambah useCertificateBranches — hook ini sebelumnya hilang total
- *  2. Semua select() disesuaikan dengan response shape setelah client.js unwrapping:
- *     - Endpoint dengan envelope { success, data: X }  → select menerima X langsung
- *     - Endpoint dengan envelope { success, branches }
- *       / { success, stock } / dll → select menerima { success, branches/stock/... }
- *  3. Konsistensi: setiap hook punya fallback yang jelas jika data tidak sesuai
+ * ✅ FIXES:
+ *  1. useCertificateBranches — hook yang sebelumnya hilang total
+ *  2. useCertificates — Fix response handling untuk pagination
+ *  3. Semua select() disesuaikan dengan response shape setelah client.js unwrapping
+ *  4. Better error handling dan logging
  */
 
 import { useQuery } from "@tanstack/react-query";
@@ -15,13 +13,7 @@ import { certificateApi } from "@/api";
 
 // =============================================================================
 // useCertificateBranches
-// FIX: Hook ini sebelumnya tidak ada — menyebabkan getCertificateBranches
-//      tidak pernah dipanggil via React Query, hanya dipanggil ad-hoc dari
-//      komponen tanpa caching / error handling yang proper.
-//
-// Backend response: { success: true, branches: [...] }
-// Setelah client.js: response.data tetap { success: true, branches: [...] }
-//   (karena tidak ada field "data" → tidak di-unwrap ke .data)
+// Hook untuk fetch branches list untuk dropdown (Admin)
 // =============================================================================
 
 export const useCertificateBranches = () => {
@@ -54,10 +46,14 @@ export const useCertificateBranches = () => {
 };
 
 // =============================================================================
-// useCertificates
+// ✅ FIX: useCertificates
+// Get certificates with filters, search, and pagination
 //
-// Backend response: { success: true, data: { certificates: [...], pagination: {} } }
-// Setelah client.js unwrap (.data ada): select menerima { certificates: [...], pagination: {} }
+// Backend response setelah ResponseHelper.success:
+//   { success: true, message: "...", data: { certificates: [...], pagination: {...} } }
+//
+// Setelah client.js unwrap (.data ada):
+//   { certificates: [...], pagination: {...} }
 // =============================================================================
 
 export const useCertificates = (params = {}) => {
@@ -66,30 +62,42 @@ export const useCertificates = (params = {}) => {
     queryFn: () => certificateApi.getCertificates(params),
     placeholderData: (previousData) => previousData,
     select: (data) => {
-      console.log("[useCertificates] Raw data:", data);
+      console.log("[useCertificates] Raw data from API:", data);
+      console.log("[useCertificates] Query params:", params);
 
       let certificates = [];
       let pagination = { total: 0, page: 1, limit: 20, pages: 1 };
 
+      // ✅ FIX: Handle response shape properly
       // Shape setelah unwrap: { certificates: [...], pagination: {...} }
       if (data?.certificates && Array.isArray(data.certificates)) {
         certificates = data.certificates;
-        pagination = data.pagination ?? pagination;
+
+        // ✅ FIX: Extract pagination properly
+        if (data.pagination) {
+          pagination = {
+            total: data.pagination.total || 0,
+            page: data.pagination.page || 1,
+            limit: data.pagination.limit || 20,
+            pages: data.pagination.pages || 1,
+          };
+        }
       }
       // Fallback: direct array
       else if (Array.isArray(data)) {
         certificates = data;
       }
-      // Fallback: { data: [...] } (double-wrapped, defensive)
+      // Fallback: double-wrapped (defensive)
       else if (data?.data && Array.isArray(data.data)) {
         certificates = data.data;
-        pagination = data.pagination ?? pagination;
+        if (data.pagination) {
+          pagination = data.pagination;
+        }
       }
 
       console.log("[useCertificates] Processed:", {
-        count: certificates.length,
-        total: pagination.total,
-        pages: pagination.pages,
+        certificatesCount: certificates.length,
+        pagination: pagination,
       });
 
       return { certificates, pagination };
@@ -103,7 +111,6 @@ export const useCertificates = (params = {}) => {
 // Backend: getStockSummary → ResponseHelper.success wraps ke { success, data: result }
 // Setelah client.js unwrap via .data:
 //   { head_branch: { id, code, name, stock: {...} }, sub_branches: [...] }
-// select() normalize ke flat array: [{ branch_id, branch_code, branch_name, is_head_branch, stock }]
 // =============================================================================
 
 export const useCertificateStock = () => {
@@ -129,7 +136,12 @@ export const useCertificateStock = () => {
             branch_code: data.head_branch.code,
             branch_name: data.head_branch.name,
             is_head_branch: true,
-            stock: data.head_branch.stock ?? {},
+            // ✅ FIX: Flatten stock object properly
+            total: parseInt(data.head_branch.stock?.total || 0, 10),
+            in_stock: parseInt(data.head_branch.stock?.in_stock || 0, 10),
+            reserved: parseInt(data.head_branch.stock?.reserved || 0, 10),
+            printed: parseInt(data.head_branch.stock?.printed || 0, 10),
+            migrated: parseInt(data.head_branch.stock?.migrated || 0, 10),
           });
         }
 
@@ -140,7 +152,12 @@ export const useCertificateStock = () => {
               branch_code: b.branch_code,
               branch_name: b.branch_name,
               is_head_branch: false,
-              stock: b.stock ?? {},
+              // ✅ FIX: Flatten stock object properly
+              total: parseInt(b.stock?.total || 0, 10),
+              in_stock: parseInt(b.stock?.in_stock || 0, 10),
+              reserved: parseInt(b.stock?.reserved || 0, 10),
+              printed: parseInt(b.stock?.printed || 0, 10),
+              migrated: parseInt(b.stock?.migrated || 0, 10),
             }),
           );
         }
@@ -166,8 +183,8 @@ export const useCertificateStock = () => {
 // =============================================================================
 // useStockAlerts
 //
-// Backend response: { success: true, alerts: [...] }
-// Setelah client.js: tidak di-unwrap (tidak ada .data) → { success, alerts }
+// Backend response: { success: true, data: { alerts: [...], summary: {...} } }
+// Setelah client.js unwrap: { alerts: [...], summary: {...} }
 // =============================================================================
 
 export const useStockAlerts = (params = {}) => {
@@ -179,6 +196,7 @@ export const useStockAlerts = (params = {}) => {
 
       let alerts = [];
 
+      // Shape: { alerts: [...], summary: {...} }
       if (data?.alerts && Array.isArray(data.alerts)) {
         alerts = data.alerts;
       } else if (Array.isArray(data)) {
@@ -195,8 +213,8 @@ export const useStockAlerts = (params = {}) => {
 // =============================================================================
 // useCertificateStatistics
 //
-// Backend response: { success: true, data: { ... } }  (diasumsikan pakai .data)
-// Setelah client.js unwrap: select menerima { ... } langsung
+// Backend response: { success: true, data: { ... } }
+// Setelah client.js unwrap: { ... } langsung
 // =============================================================================
 
 export const useCertificateStatistics = (params = {}) => {
