@@ -10,17 +10,21 @@ import { branchApi } from "@/api";
  * Get all branches
  * @param {Object} [params] - Query parameters
  * @param {boolean} [params.includeInactive] - Include inactive branches
- * @returns {Object} Query object
+ * @param {number} [params.page] - Page number for pagination
+ * @param {number} [params.limit] - Items per page for pagination
+ * @returns {Object} Query object with branches, stats, and pagination
  *
  * @example
- * const { data: branches, isLoading } = useBranches();
- * const { data: allBranches } = useBranches({ includeInactive: true });
+ * const { data, isLoading } = useBranches();
+ * const { data } = useBranches({ includeInactive: true, page: 1, limit: 5 });
+ * // data = { branches: [...], stats: {...}, pagination: {...} }
  */
 export const useBranches = (params = {}) => {
   return useQuery({
     queryKey: ["branches", params],
     queryFn: () => branchApi.getAllBranches(params),
-    select: (data) => data.branches,
+    // Return full response object (branches + stats + pagination)
+    select: (data) => data,
   });
 };
 
