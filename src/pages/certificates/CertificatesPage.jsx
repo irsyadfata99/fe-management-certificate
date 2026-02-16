@@ -8,6 +8,8 @@
  * - Loading states
  * - Search functionality
  * - Proper pagination
+ * - Fixed console.log in JSX (removed)
+ * - Fixed migrate validation
  *
  * FEATURES:
  * - Stats cards (Total, In Stock, Reserved, Printed) - REAL DATA
@@ -352,6 +354,7 @@ function MigrateModal({
 
   const startNumber = watch("startNumber");
   const endNumber = watch("endNumber");
+  const toBranchId = watch("toBranchId");
   const previewCount =
     startNumber && endNumber ? getCertificateCount(startNumber, endNumber) : 0;
 
@@ -403,6 +406,7 @@ function MigrateModal({
           <FormLabel required>Target Branch</FormLabel>
           <Select
             {...register("toBranchId", { valueAsNumber: true })}
+            defaultValue=""
             error={!!errors.toBranchId}
             helperText={errors.toBranchId?.message}
             disabled={isLoadingBranches}
@@ -436,7 +440,7 @@ function MigrateModal({
           cancelText="Cancel"
           confirmText="Migrate Certificates"
           confirmLoading={isMigrating}
-          confirmDisabled={isMigrating || previewCount === 0}
+          confirmDisabled={isMigrating || previewCount === 0 || !toBranchId}
           confirmVariant="primary"
         />
       </form>
@@ -547,11 +551,15 @@ function CertificateTable({
       </Table>
 
       {/* Pagination - Always show if there's data */}
-      {!isLoading && certificates.length > 0 && (
+      {!isLoading && certificates.length > 0 && pagination && (
         <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700">
           <Pagination
-            currentPage={filters.page}
-            totalPages={pagination.pages}
+            currentPage={pagination.page}
+            totalPages={
+              pagination.totalPages ||
+              Math.ceil(pagination.total / filters.limit) ||
+              1
+            }
             onPageChange={(page) => setFilters({ ...filters, page })}
             totalItems={pagination.total}
             itemsPerPage={filters.limit}
@@ -593,7 +601,11 @@ export default function CertificatesPage() {
   // ✅ Extract data properly
   const branches = branchesData?.branches || [];
   const certificates = certificatesData?.certificates || [];
-  const pagination = certificatesData?.pagination || { total: 0, pages: 1 };
+  const pagination = certificatesData?.pagination || {
+    total: 0,
+    totalPages: 1,
+    page: 1,
+  };
 
   // ✅ FIX: Calculate stats from REAL stock data (flatten properly)
   const stats = {
@@ -619,6 +631,9 @@ export default function CertificatesPage() {
         toast.success(`${response.count} certificates created successfully`);
         setBulkCreateModalOpen(false);
       },
+      onError: (error) => {
+        toast.error(error.message || "Failed to create certificates");
+      },
     });
   };
 
@@ -629,6 +644,9 @@ export default function CertificatesPage() {
           `${response.migratedCount} certificates migrated successfully`,
         );
         setMigrateModalOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to migrate certificates");
       },
     });
   };
