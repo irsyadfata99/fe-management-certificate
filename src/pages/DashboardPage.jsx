@@ -86,17 +86,20 @@ function SuperAdminDashboard() {
   const [showAddBranchModal, setShowAddBranchModal] = useState(false);
 
   // Fetch data
-  const { data: branches, isLoading: loadingBranches } = useBranches();
+  const { data: branchesData, isLoading: loadingBranches } = useBranches();
   const { data: teachers, isLoading: loadingTeachers } = useTeachers();
   const { data: alerts, isLoading: loadingAlerts } = useStockAlerts({
     threshold: 10,
   });
 
+  // ✅ Extract branches array from response object
+  const branches = branchesData?.branches || [];
+
   const isLoading = loadingBranches || loadingTeachers || loadingAlerts;
 
   // Calculate stats
-  const totalBranches = branches?.length || 0;
-  const activeBranches = branches?.filter((b) => b.is_active)?.length || 0;
+  const totalBranches = branches.length;
+  const activeBranches = branches.filter((b) => b.is_active).length;
   const totalTeachers = teachers?.length || 0;
   const activeTeachers = teachers?.filter((t) => t.is_active)?.length || 0;
   const stockAlerts = alerts?.length || 0;
@@ -1056,15 +1059,16 @@ function generatePrintsTrendData() {
   ];
 }
 
-function generateStockPerBranchData(branches) {
-  if (!branches || branches.length === 0) {
+function generateStockPerBranchData(branchesArray) {
+  // ✅ branchesArray is already extracted array from useBranches
+  if (!branchesArray || branchesArray.length === 0) {
     return [
       { label: "Branch A", value: 150 },
       { label: "Branch B", value: 120 },
       { label: "Branch C", value: 95 },
     ];
   }
-  return branches.slice(0, 5).map((branch) => ({
+  return branchesArray.slice(0, 5).map((branch) => ({
     label: branch.branch_name,
     value: branch.total || 0,
   }));

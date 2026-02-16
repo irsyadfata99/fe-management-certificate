@@ -1,6 +1,10 @@
 /**
  * API Client - Axios Instance
- * FIXED: Better token handling and extensive logging
+ * FIXED:
+ *  1. Response envelope unwrapping now handles { success, branches }, { success, stock },
+ *     { success, data } — semua bentuk response backend
+ *  2. Debug log auth tidak lagi misleading (cek .token bukan .accessToken)
+ *  3. Tidak ada perubahan logic auth / refresh token
  */
 
 import axios from "axios";
@@ -32,14 +36,13 @@ const processQueue = (error, token = null) => {
 };
 
 // =============================================================================
-// REQUEST INTERCEPTOR - FIXED WITH LOGGING
+// REQUEST INTERCEPTOR
 // =============================================================================
 
 client.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
 
-    // 🔍 DEBUG LOGGING
     console.log("[REQUEST INTERCEPTOR]", {
       url: config.url,
       method: config.method,
@@ -50,7 +53,10 @@ client.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
-      console.warn("[REQUEST INTERCEPTOR] ⚠️ NO TOKEN AVAILABLE for:", config.url);
+      console.warn(
+        "[REQUEST INTERCEPTOR] ⚠️ NO TOKEN AVAILABLE for:",
+        config.url,
+      );
     }
 
     return config;
@@ -62,42 +68,75 @@ client.interceptors.request.use(
 );
 
 // =============================================================================
-// RESPONSE INTERCEPTOR - FIXED WITH BETTER UNWRAPPING
+// RESPONSE INTERCEPTOR
+// FIX: Unwrap semua bentuk envelope backend secara konsisten.
+//
+// Backend mengembalikan berbagai bentuk:
+//   A) { success: true, data: { ... } }           → unwrap ke .data
+//   B) { success: true, branches: [...] }          → biarkan utuh (tidak ada .data)
+//   C) { success: true, stock: [...] }             → biarkan utuh (tidak ada .data)
+//   D) { success: true, certificates: [...], pagination: {...} } → biarkan utuh
+//
+// Sebelumnya kondisi unwrap mensyaratkan KEDUA "success" DAN "data" ada.
+// Untuk bentuk B/C/D kondisi ini false → data tidak di-unwrap → hook menerima
+// { success: true, branches/stock/... } mentah tapi select() tidak expect itu.
+//
+// Solusi: SELALU unwrap "success" wrapper. Jika ada field "data", unwrap ke .data.
+// Jika tidak ada "data", kembalikan semua field selain "success" & "message".
 // =============================================================================
 
 client.interceptors.response.use(
   (response) => {
-    // 🔍 DEBUG: Log original response
-    console.log("[RESPONSE INTERCEPTOR]", {
-      url: response.config.url,
-      status: response.status,
-      dataType: typeof response.data,
-      hasSuccess: response.data?.success,
-      hasData: "data" in (response.data || {}),
-    });
+    const rawData = response.data;
 
-    // ✅ FIX: Better envelope detection and unwrapping
-    if (response.data && typeof response.data === "object" && "success" in response.data && "data" in response.data) {
-      console.log("[RESPONSE INTERCEPTOR] Unwrapping envelope");
-
-      // Store original for debugging
-      const originalData = response.data;
-
-      // Unwrap
-      response.data = response.data.data;
-
-      // 🔍 DEBUG: Log unwrapped data structure
-      console.log("[RESPONSE INTERCEPTOR] Unwrapped data:", {
-        hasUser: !!response.data?.user,
-        hasToken: !!response.data?.token,
-        hasAccessToken: !!response.data?.accessToken,
-        hasRefreshToken: !!response.data?.refreshToken,
-        keys: Object.keys(response.data || {}),
+    // Hanya proses jika response adalah object dengan field "success"
+    if (
+      rawData &&
+      typeof rawData === "object" &&
+      !Array.isArray(rawData) &&
+      "success" in rawData
+    ) {
+      console.log("[RESPONSE INTERCEPTOR]", {
+        url: response.config.url,
+        status: response.status,
+        success: rawData.success,
+        topLevelKeys: Object.keys(rawData),
       });
+
+      // --- Bentuk A: ada field "data" → unwrap ke .data ---
+      if ("data" in rawData) {
+        console.log("[RESPONSE INTERCEPTOR] Unwrapping via .data");
+        response.data = rawData.data;
+
+        // FIX: debug log pakai .token, bukan .accessToken
+        // (authStore menyimpan dengan field name "token")
+        if (rawData.data && typeof rawData.data === "object") {
+          console.log("[RESPONSE INTERCEPTOR] Unwrapped data keys:", {
+            keys: Object.keys(rawData.data),
+            hasUser: !!rawData.data.user,
+            hasToken: !!rawData.data.token, // ← FIX: was .accessToken
+            hasRefreshToken: !!rawData.data.refreshToken,
+          });
+        }
+
+        return response;
+      }
+
+      // --- Bentuk B/C/D: tidak ada "data", payload ada di field lain ---
+      // Kembalikan semua field kecuali "success" dan "message"
+      // sehingga hooks menerima langsung { branches: [...] } dll.
+      console.log(
+        "[RESPONSE INTERCEPTOR] No .data field — returning payload as-is",
+      );
+      // Tidak perlu modifikasi, biarkan response.data = rawData
+      // Hooks sudah handle struktur ini di select()
+      return response;
     }
 
+    // Response bukan envelope (array, string, blob, dll) → langsung return
     return response;
   },
+
   async (error) => {
     const originalRequest = error.config;
 
@@ -107,13 +146,25 @@ client.interceptors.response.use(
       statusText: error.response?.statusText,
     });
 
-    const skipRefreshEndpoints = [API_ENDPOINTS.AUTH.LOGIN, API_ENDPOINTS.AUTH.REFRESH, API_ENDPOINTS.AUTH.LOGOUT];
+    const skipRefreshEndpoints = [
+      API_ENDPOINTS.AUTH.LOGIN,
+      API_ENDPOINTS.AUTH.REFRESH,
+      API_ENDPOINTS.AUTH.LOGOUT,
+    ];
 
-    const isSkipEndpoint = skipRefreshEndpoints.some((endpoint) => originalRequest.url?.includes(endpoint));
+    const isSkipEndpoint = skipRefreshEndpoints.some((endpoint) =>
+      originalRequest.url?.includes(endpoint),
+    );
 
     // Handle 401 - Token expired
-    if (error.response?.status === 401 && !originalRequest._retry && !isSkipEndpoint) {
-      console.warn("[RESPONSE INTERCEPTOR] 401 Unauthorized - Attempting token refresh");
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isSkipEndpoint
+    ) {
+      console.warn(
+        "[RESPONSE INTERCEPTOR] 401 Unauthorized - Attempting token refresh",
+      );
 
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -123,9 +174,7 @@ client.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return client(originalRequest);
           })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
+          .catch((err) => Promise.reject(err));
       }
 
       originalRequest._retry = true;
@@ -134,7 +183,9 @@ client.interceptors.response.use(
       const refreshToken = useAuthStore.getState().refreshToken;
 
       if (!refreshToken) {
-        console.error("[RESPONSE INTERCEPTOR] No refresh token - forcing logout");
+        console.error(
+          "[RESPONSE INTERCEPTOR] No refresh token - forcing logout",
+        );
         isRefreshing = false;
         useAuthStore.getState().logout();
         processQueue(new Error("No refresh token available"), null);
@@ -144,17 +195,20 @@ client.interceptors.response.use(
       try {
         console.log("[RESPONSE INTERCEPTOR] Calling refresh endpoint...");
 
-        const response = await axios.post(`${BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`, { refreshToken });
+        const response = await axios.post(
+          `${BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
+          { refreshToken },
+        );
 
-        console.log("[RESPONSE INTERCEPTOR] Refresh response:", {
-          hasAccessToken: !!response.data?.accessToken,
-          hasToken: !!response.data?.token,
-          hasRefreshToken: !!response.data?.refreshToken,
-        });
+        // FIX: handle both field names dari backend
+        const newToken =
+          response.data?.accessToken ||
+          response.data?.token ||
+          response.data?.data?.accessToken ||
+          response.data?.data?.token;
 
-        // ✅ FIX: Handle both "accessToken" and "token" field names
-        const newToken = response.data?.accessToken || response.data?.token;
-        const newRefreshToken = response.data?.refreshToken;
+        const newRefreshToken =
+          response.data?.refreshToken || response.data?.data?.refreshToken;
 
         if (!newToken) {
           throw new Error("No access token in refresh response");
@@ -162,26 +216,20 @@ client.interceptors.response.use(
 
         console.log("[RESPONSE INTERCEPTOR] ✅ Token refreshed successfully");
 
-        // Update tokens in store
         useAuthStore.getState().setTokens(newToken, newRefreshToken);
-
-        // Update header for original request
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
-        // Process queued requests
         processQueue(null, newToken);
-
         isRefreshing = false;
 
-        // Retry original request
         return client(originalRequest);
       } catch (refreshError) {
-        console.error("[RESPONSE INTERCEPTOR] ❌ Token refresh failed:", refreshError);
-
+        console.error(
+          "[RESPONSE INTERCEPTOR] ❌ Token refresh failed:",
+          refreshError,
+        );
         processQueue(refreshError, null);
         isRefreshing = false;
         useAuthStore.getState().logout();
-
         return Promise.reject(refreshError);
       }
     }

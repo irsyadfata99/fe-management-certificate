@@ -3,7 +3,7 @@
  * Main certificate management page
  *
  * FEATURES:
- * - Stats cards (Total, In Stock, Reserved, Printed)
+ * - Stats cards (Total, In Stock, Reserved, Printed) - REAL DATA
  * - List all certificates with filters
  * - Bulk create certificates (range input)
  * - Migrate certificates to another branch
@@ -17,28 +17,68 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, ArrowRightLeft, Download, Package, Clock, Printer, Archive, Search } from "lucide-react";
+import {
+  Plus,
+  ArrowRightLeft,
+  Download,
+  Package,
+  Clock,
+  Printer,
+  Archive,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 
 // Hooks
-import { useCertificates, useCertificateStock, useBulkCreateCertificates, useMigrateCertificates, useBranches } from "@/hooks";
+import {
+  useCertificates,
+  useCertificateStock,
+  useBulkCreateCertificates,
+  useMigrateCertificates,
+  useBranches,
+} from "@/hooks";
 
 // UI Components
-import { Button, Input, Select, Modal, ModalFooter, Badge, Spinner, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty, Pagination, FormField, FormLabel } from "@/components/ui";
+import {
+  Button,
+  Input,
+  Select,
+  Modal,
+  ModalFooter,
+  Badge,
+  Spinner,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+  Pagination,
+  FormField,
+  FormLabel,
+} from "@/components/ui";
 
 // Validation
-import { bulkCreateCertificatesSchema, migrateCertificatesSchema } from "@/utils/validation/certificateValidation";
+import {
+  bulkCreateCertificatesSchema,
+  migrateCertificatesSchema,
+} from "@/utils/validation/certificateValidation";
 
 // Utils
 import { cn } from "@/utils/helpers/cn";
-import { formatCertificateNumber, getCertificateCount, formatCertificateRange } from "@/utils/format/certificateFormat";
+import {
+  formatCertificateNumber,
+  getCertificateCount,
+  formatCertificateRange,
+} from "@/utils/format/certificateFormat";
 import { formatDate } from "@/utils/format/dateFormat";
 import { getCertificateStatusLabel } from "@/utils/constants/status";
 
 // ============================================================================
 // STATS CARDS COMPONENT (MOVED OUTSIDE)
 // ============================================================================
-function StatsCards({ stats }) {
+function StatsCards({ stats, isLoading }) {
   const statCards = [
     {
       label: "Total Certificates",
@@ -83,15 +123,28 @@ function StatsCards({ stats }) {
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", stat.bgColor)}>
+                  <div
+                    className={cn(
+                      "w-12 h-12 rounded-lg flex items-center justify-center",
+                      stat.bgColor,
+                    )}
+                  >
                     <Icon className={cn("w-6 h-6", stat.iconColor)} />
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-neutral-600 dark:text-neutral-400 truncate">{stat.label}</dt>
+                    <dt className="text-sm font-medium text-neutral-600 dark:text-neutral-400 truncate">
+                      {stat.label}
+                    </dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{stat.value.toLocaleString()}</div>
+                      {isLoading ? (
+                        <div className="h-8 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+                      ) : (
+                        <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+                          {stat.value.toLocaleString()}
+                        </div>
+                      )}
                     </dd>
                   </dl>
                 </div>
@@ -107,15 +160,32 @@ function StatsCards({ stats }) {
 // ============================================================================
 // FILTERS COMPONENT (MOVED OUTSIDE)
 // ============================================================================
-function CertificateFilters({ filters, setFilters, branches }) {
+function CertificateFilters({
+  filters,
+  setFilters,
+  branches,
+  isLoadingBranches,
+}) {
   return (
     <div className="glass-card-auto p-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Search */}
-        <Input placeholder="Search certificate number..." value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })} leftIcon={<Search className="w-4 h-4" />} />
+        <Input
+          placeholder="Search certificate number..."
+          value={filters.search}
+          onChange={(e) =>
+            setFilters({ ...filters, search: e.target.value, page: 1 })
+          }
+          leftIcon={<Search className="w-4 h-4" />}
+        />
 
         {/* Status Filter */}
-        <Select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}>
+        <Select
+          value={filters.status}
+          onChange={(e) =>
+            setFilters({ ...filters, status: e.target.value, page: 1 })
+          }
+        >
           <option value="">All Status</option>
           <option value="in_stock">Available</option>
           <option value="reserved">Reserved</option>
@@ -133,6 +203,7 @@ function CertificateFilters({ filters, setFilters, branches }) {
               page: 1,
             })
           }
+          disabled={isLoadingBranches}
         >
           <option value="">All Branches</option>
           {branches.map((branch) => (
@@ -151,7 +222,7 @@ function CertificateFilters({ filters, setFilters, branches }) {
               currentBranchId: "",
               search: "",
               page: 1,
-              limit: 8, // ✅ FIXED: Reset to 8 items
+              limit: 8,
             })
           }
         >
@@ -178,7 +249,8 @@ function BulkCreateModal({ isOpen, onClose, onSubmit, isCreating }) {
 
   const startNumber = watch("startNumber");
   const endNumber = watch("endNumber");
-  const previewCount = startNumber && endNumber ? getCertificateCount(startNumber, endNumber) : 0;
+  const previewCount =
+    startNumber && endNumber ? getCertificateCount(startNumber, endNumber) : 0;
 
   const handleFormSubmit = (data) => {
     onSubmit(data);
@@ -191,32 +263,60 @@ function BulkCreateModal({ isOpen, onClose, onSubmit, isCreating }) {
   };
 
   return (
-    <Modal open={isOpen} onClose={handleClose} title="Bulk Create Certificates" description="Create multiple certificates in a range" size="md">
+    <Modal
+      open={isOpen}
+      onClose={handleClose}
+      title="Bulk Create Certificates"
+      description="Create multiple certificates in a range"
+      size="md"
+    >
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
         {/* Start Number */}
         <FormField>
           <FormLabel required>Start Number</FormLabel>
-          <Input type="number" {...register("startNumber", { valueAsNumber: true })} placeholder="e.g., 1" error={!!errors.startNumber} helperText={errors.startNumber?.message} />
+          <Input
+            type="number"
+            {...register("startNumber", { valueAsNumber: true })}
+            placeholder="e.g., 1"
+            error={!!errors.startNumber}
+            helperText={errors.startNumber?.message}
+          />
         </FormField>
 
         {/* End Number */}
         <FormField>
           <FormLabel required>End Number</FormLabel>
-          <Input type="number" {...register("endNumber", { valueAsNumber: true })} placeholder="e.g., 100" error={!!errors.endNumber} helperText={errors.endNumber?.message} />
+          <Input
+            type="number"
+            {...register("endNumber", { valueAsNumber: true })}
+            placeholder="e.g., 100"
+            error={!!errors.endNumber}
+            helperText={errors.endNumber?.message}
+          />
         </FormField>
 
         {/* Preview */}
         {previewCount > 0 && (
           <div className="p-4 bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-800 rounded-lg">
             <p className="text-sm text-primary-900 dark:text-primary-100">
-              <span className="font-semibold">Preview:</span> Will create <span className="font-bold">{previewCount}</span> certificates
+              <span className="font-semibold">Preview:</span> Will create{" "}
+              <span className="font-bold">{previewCount}</span> certificates
             </p>
-            <p className="text-xs text-primary-700 dark:text-primary-300 mt-1">Range: {formatCertificateRange(startNumber, endNumber)}</p>
+            <p className="text-xs text-primary-700 dark:text-primary-300 mt-1">
+              Range: {formatCertificateRange(startNumber, endNumber)}
+            </p>
           </div>
         )}
 
         {/* Footer */}
-        <ModalFooter onCancel={handleClose} onConfirm={handleSubmit(handleFormSubmit)} cancelText="Cancel" confirmText="Create Certificates" confirmLoading={isCreating} confirmDisabled={isCreating || previewCount === 0} />
+        <ModalFooter
+          onCancel={handleClose}
+          onConfirm={handleSubmit(handleFormSubmit)}
+          cancelText="Cancel"
+          confirmText="Create Certificates"
+          confirmLoading={isCreating}
+          confirmDisabled={isCreating || previewCount === 0}
+        />
       </form>
     </Modal>
   );
@@ -225,7 +325,14 @@ function BulkCreateModal({ isOpen, onClose, onSubmit, isCreating }) {
 // ============================================================================
 // MIGRATE MODAL (MOVED OUTSIDE)
 // ============================================================================
-function MigrateModal({ isOpen, onClose, onSubmit, isMigrating, branches }) {
+function MigrateModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  isMigrating,
+  branches,
+  isLoadingBranches,
+}) {
   const {
     register,
     handleSubmit,
@@ -238,7 +345,8 @@ function MigrateModal({ isOpen, onClose, onSubmit, isMigrating, branches }) {
 
   const startNumber = watch("startNumber");
   const endNumber = watch("endNumber");
-  const previewCount = startNumber && endNumber ? getCertificateCount(startNumber, endNumber) : 0;
+  const previewCount =
+    startNumber && endNumber ? getCertificateCount(startNumber, endNumber) : 0;
 
   const handleFormSubmit = (data) => {
     onSubmit(data);
@@ -251,24 +359,47 @@ function MigrateModal({ isOpen, onClose, onSubmit, isMigrating, branches }) {
   };
 
   return (
-    <Modal open={isOpen} onClose={handleClose} title="Migrate Certificates" description="Move certificates to another branch" size="md">
+    <Modal
+      open={isOpen}
+      onClose={handleClose}
+      title="Migrate Certificates"
+      description="Move certificates to another branch"
+      size="md"
+    >
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
         {/* Start Number */}
         <FormField>
           <FormLabel required>Start Number</FormLabel>
-          <Input type="number" {...register("startNumber", { valueAsNumber: true })} placeholder="e.g., 1" error={!!errors.startNumber} helperText={errors.startNumber?.message} />
+          <Input
+            type="number"
+            {...register("startNumber", { valueAsNumber: true })}
+            placeholder="e.g., 1"
+            error={!!errors.startNumber}
+            helperText={errors.startNumber?.message}
+          />
         </FormField>
 
         {/* End Number */}
         <FormField>
           <FormLabel required>End Number</FormLabel>
-          <Input type="number" {...register("endNumber", { valueAsNumber: true })} placeholder="e.g., 50" error={!!errors.endNumber} helperText={errors.endNumber?.message} />
+          <Input
+            type="number"
+            {...register("endNumber", { valueAsNumber: true })}
+            placeholder="e.g., 50"
+            error={!!errors.endNumber}
+            helperText={errors.endNumber?.message}
+          />
         </FormField>
 
         {/* Target Branch */}
         <FormField>
           <FormLabel required>Target Branch</FormLabel>
-          <Select {...register("toBranchId", { valueAsNumber: true })} error={!!errors.toBranchId} helperText={errors.toBranchId?.message}>
+          <Select
+            {...register("toBranchId", { valueAsNumber: true })}
+            error={!!errors.toBranchId}
+            helperText={errors.toBranchId?.message}
+            disabled={isLoadingBranches}
+          >
             <option value="">Select target branch</option>
             {branches.map((branch) => (
               <option key={branch.id} value={branch.id}>
@@ -282,9 +413,12 @@ function MigrateModal({ isOpen, onClose, onSubmit, isMigrating, branches }) {
         {previewCount > 0 && (
           <div className="p-4 bg-warning-50 dark:bg-warning-950 border border-warning-200 dark:border-warning-800 rounded-lg">
             <p className="text-sm text-warning-900 dark:text-warning-100">
-              <span className="font-semibold">Preview:</span> Will migrate <span className="font-bold">{previewCount}</span> certificates
+              <span className="font-semibold">Preview:</span> Will migrate{" "}
+              <span className="font-bold">{previewCount}</span> certificates
             </p>
-            <p className="text-xs text-warning-700 dark:text-warning-300 mt-1">Range: {formatCertificateRange(startNumber, endNumber)}</p>
+            <p className="text-xs text-warning-700 dark:text-warning-300 mt-1">
+              Range: {formatCertificateRange(startNumber, endNumber)}
+            </p>
           </div>
         )}
 
@@ -306,7 +440,13 @@ function MigrateModal({ isOpen, onClose, onSubmit, isMigrating, branches }) {
 // ============================================================================
 // CERTIFICATE TABLE (MOVED OUTSIDE)
 // ============================================================================
-function CertificateTable({ certificates, isLoading, pagination, filters, setFilters }) {
+function CertificateTable({
+  certificates,
+  isLoading,
+  pagination,
+  filters,
+  setFilters,
+}) {
   // Status badge variant mapping
   const getStatusBadge = (status) => {
     const variants = {
@@ -341,28 +481,57 @@ function CertificateTable({ certificates, isLoading, pagination, filters, setFil
               <TableCell colSpan={5} align="center">
                 <div className="py-8">
                   <Spinner size="lg" className="mx-auto" />
-                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Loading certificates...</p>
+                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                    Loading certificates...
+                  </p>
                 </div>
               </TableCell>
             </TableRow>
           ) : certificates.length === 0 ? (
-            <TableEmpty message="No certificates found. Try adjusting your filters." colSpan={5} />
+            <TableEmpty
+              message="No certificates found. Try adjusting your filters."
+              colSpan={5}
+            />
           ) : (
             certificates.map((cert) => (
               <TableRow key={cert.id}>
                 <TableCell>
-                  <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">{formatCertificateNumber(cert.certificate_number)}</span>
+                  <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">
+                    {formatCertificateNumber(cert.certificate_number)}
+                  </span>
                 </TableCell>
                 <TableCell>{getStatusBadge(cert.status)}</TableCell>
                 <TableCell>
-                  <span className="text-neutral-900 dark:text-neutral-100">{cert.branch_name || "-"}</span>
+                  <span className="text-neutral-900 dark:text-neutral-100">
+                    {cert.branch_name || "-"}
+                  </span>
                 </TableCell>
                 <TableCell>
-                  {cert.status === "reserved" && cert.reserved_by && <span className="text-sm text-neutral-600 dark:text-neutral-400">Reserved by: {cert.reserved_by}</span>}
-                  {cert.status === "printed" && cert.student_name && <span className="text-sm text-neutral-600 dark:text-neutral-400">Student: {cert.student_name}</span>}
+                  {cert.status === "reserved" && cert.reserved_by && (
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Reserved by: {cert.reserved_by}
+                    </span>
+                  )}
+                  {cert.status === "printed" && cert.student_name && (
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Student: {cert.student_name}
+                    </span>
+                  )}
+                  {cert.status === "migrated" && cert.migrated_to && (
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Migrated to: {cert.migrated_to}
+                    </span>
+                  )}
+                  {cert.status === "in_stock" && (
+                    <span className="text-sm text-neutral-500 dark:text-neutral-500">
+                      -
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">{formatDate(cert.updated_at)}</span>
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {formatDate(cert.updated_at)}
+                  </span>
                 </TableCell>
               </TableRow>
             ))
@@ -370,10 +539,18 @@ function CertificateTable({ certificates, isLoading, pagination, filters, setFil
         </TableBody>
       </Table>
 
-      {/* Pagination - ✅ ALWAYS SHOW (even on page 1) */}
-      <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700">
-        <Pagination currentPage={filters.page} totalPages={pagination.pages} onPageChange={(page) => setFilters({ ...filters, page })} totalItems={pagination.total} itemsPerPage={filters.limit} />
-      </div>
+      {/* Pagination - Always show if there's data */}
+      {!isLoading && certificates.length > 0 && (
+        <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700">
+          <Pagination
+            currentPage={filters.page}
+            totalPages={pagination.pages}
+            onPageChange={(page) => setFilters({ ...filters, page })}
+            totalItems={pagination.total}
+            itemsPerPage={filters.limit}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -390,7 +567,7 @@ export default function CertificatesPage() {
     currentBranchId: "",
     search: "",
     page: 1,
-    limit: 8, // ✅ FIXED: Changed from 20 to 8
+    limit: 8,
   });
 
   // Modal states
@@ -398,27 +575,33 @@ export default function CertificatesPage() {
   const [migrateModalOpen, setMigrateModalOpen] = useState(false);
 
   // ============================================================================
-  // API HOOKS
+  // API HOOKS - FETCH DATA
   // ============================================================================
   const { data: certificatesData, isLoading } = useCertificates(filters);
-  const { data: stockData } = useCertificateStock();
-  const { data: branchesData } = useBranches({ includeInactive: false });
+  const { data: stockData, isLoading: isLoadingStock } = useCertificateStock();
+  const { data: branchesData, isLoading: isLoadingBranches } = useBranches({
+    includeInactive: false,
+  });
 
-  const { mutate: bulkCreate, isPending: isCreating } = useBulkCreateCertificates();
-  const { mutate: migrate, isPending: isMigrating } = useMigrateCertificates();
-
-  // FIX: Properly destructure branches array
+  // ✅ Extract data properly
   const branches = branchesData?.branches || [];
   const certificates = certificatesData?.certificates || [];
   const pagination = certificatesData?.pagination || { total: 0, pages: 1 };
 
-  // Calculate stats from stock data
+  // ✅ Calculate stats from REAL stock data
   const stats = {
-    total: stockData?.reduce((sum, s) => sum + s.total, 0) || 0,
-    in_stock: stockData?.reduce((sum, s) => sum + s.in_stock, 0) || 0,
-    reserved: stockData?.reduce((sum, s) => sum + s.reserved, 0) || 0,
-    printed: stockData?.reduce((sum, s) => sum + s.printed, 0) || 0,
+    total: stockData?.reduce((sum, s) => sum + (s.total || 0), 0) || 0,
+    in_stock: stockData?.reduce((sum, s) => sum + (s.in_stock || 0), 0) || 0,
+    reserved: stockData?.reduce((sum, s) => sum + (s.reserved || 0), 0) || 0,
+    printed: stockData?.reduce((sum, s) => sum + (s.printed || 0), 0) || 0,
   };
+
+  // ============================================================================
+  // API HOOKS - MUTATIONS
+  // ============================================================================
+  const { mutate: bulkCreate, isPending: isCreating } =
+    useBulkCreateCertificates();
+  const { mutate: migrate, isPending: isMigrating } = useMigrateCertificates();
 
   // ============================================================================
   // HANDLERS
@@ -435,7 +618,9 @@ export default function CertificatesPage() {
   const handleMigrate = (data) => {
     migrate(data, {
       onSuccess: (response) => {
-        toast.success(`${response.migratedCount} certificates migrated successfully`);
+        toast.success(
+          `${response.migratedCount} certificates migrated successfully`,
+        );
         setMigrateModalOpen(false);
       },
     });
@@ -449,35 +634,73 @@ export default function CertificatesPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Certificate Management</h1>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">Manage all certificates across branches</p>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+            Certificate Management
+          </h1>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+            Manage all certificates across branches
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setBulkCreateModalOpen(true)} leftIcon={<Plus className="w-4 h-4" />}>
+          <Button
+            onClick={() => setBulkCreateModalOpen(true)}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
             Bulk Create
           </Button>
-          <Button variant="secondary" onClick={() => setMigrateModalOpen(true)} leftIcon={<ArrowRightLeft className="w-4 h-4" />}>
+          <Button
+            variant="secondary"
+            onClick={() => setMigrateModalOpen(true)}
+            leftIcon={<ArrowRightLeft className="w-4 h-4" />}
+          >
             Migrate
           </Button>
-          <Button variant="outline" leftIcon={<Download className="w-4 h-4" />} disabled>
+          <Button
+            variant="outline"
+            leftIcon={<Download className="w-4 h-4" />}
+            disabled
+          >
             Export
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <StatsCards stats={stats} />
+      {/* Stats Cards - REAL DATA */}
+      <StatsCards stats={stats} isLoading={isLoadingStock} />
 
       {/* Filters */}
-      <CertificateFilters filters={filters} setFilters={setFilters} branches={branches} />
+      <CertificateFilters
+        filters={filters}
+        setFilters={setFilters}
+        branches={branches}
+        isLoadingBranches={isLoadingBranches}
+      />
 
-      {/* Certificates Table */}
-      <CertificateTable certificates={certificates} isLoading={isLoading} pagination={pagination} filters={filters} setFilters={setFilters} />
+      {/* Certificates Table - REAL DATA */}
+      <CertificateTable
+        certificates={certificates}
+        isLoading={isLoading}
+        pagination={pagination}
+        filters={filters}
+        setFilters={setFilters}
+      />
 
       {/* Modals */}
-      <BulkCreateModal isOpen={bulkCreateModalOpen} onClose={() => setBulkCreateModalOpen(false)} onSubmit={handleBulkCreate} isCreating={isCreating} />
+      <BulkCreateModal
+        isOpen={bulkCreateModalOpen}
+        onClose={() => setBulkCreateModalOpen(false)}
+        onSubmit={handleBulkCreate}
+        isCreating={isCreating}
+      />
 
-      <MigrateModal isOpen={migrateModalOpen} onClose={() => setMigrateModalOpen(false)} onSubmit={handleMigrate} isMigrating={isMigrating} branches={branches} />
+      <MigrateModal
+        isOpen={migrateModalOpen}
+        onClose={() => setMigrateModalOpen(false)}
+        onSubmit={handleMigrate}
+        isMigrating={isMigrating}
+        branches={branches}
+        isLoadingBranches={isLoadingBranches}
+      />
     </div>
   );
 }

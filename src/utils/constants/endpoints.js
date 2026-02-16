@@ -13,7 +13,6 @@ export const API_ENDPOINTS = {
     LOGOUT: "/auth/logout",
     ME: "/auth/me",
     REFRESH: "/auth/refresh",
-    // FIX: backend menggunakan PATCH, bukan POST (lihat authRoutes.js)
     CHANGE_PASSWORD: "/auth/change-password",
     CHANGE_USERNAME: "/auth/change-username",
   },
@@ -211,7 +210,6 @@ export const API_ENDPOINTS = {
     TOGGLE_ACTIVE: (id) => `/teachers/${id}/toggle-active`,
 
     // Teacher Profile (Teacher own access)
-    // Semua di-mount di /teachers/profile/* via teacherProfileRoutes
     PROFILE: {
       /**
        * GET /teachers/profile/me
@@ -221,7 +219,6 @@ export const API_ENDPOINTS = {
       /**
        * PATCH /teachers/profile/me
        * Body: { full_name }
-       * FIX: backend menggunakan PATCH, bukan PUT
        */
       UPDATE_ME: "/teachers/profile/me",
 
@@ -246,6 +243,13 @@ export const API_ENDPOINTS = {
   // CERTIFICATES - ADMIN
   // ============================================================================
   CERTIFICATES: {
+    /**
+     * ✅ NEW: GET /certificates/branches
+     * Get active branches for dropdown (Admin accessible)
+     * This is the endpoint Admin should use instead of /branches
+     */
+    GET_BRANCHES: "/certificates/branches",
+
     /**
      * POST /certificates/bulk-create
      * Body: { startNumber, endNumber }
