@@ -1,7 +1,7 @@
 /**
  * Router Configuration
  * App routes dengan role-based protection
- * UPDATED: Added CertificateStockPage & CertificateLogsPage
+ * UPDATED: Added Teacher routes matched to sidebarConfig paths
  */
 
 import { createBrowserRouter, Navigate } from "react-router-dom";
@@ -26,7 +26,7 @@ import CertificatesPage from "@/pages/certificates/CertificatesPage";
 import CertificateStockPage from "@/pages/certificates/CertificateStockPage";
 import CertificateLogsPage from "@/pages/certificates/CertificateLogsPage";
 
-// Divison pages
+// Division pages
 import DivisionsPage from "@/pages/divisions/DivisionsPage";
 
 // Modules pages
@@ -41,6 +41,16 @@ import ComponentShowcasePage from "@/pages/showcase/ComponentShowcasePage";
 // Error Pages
 import NotFoundPage from "@/pages/errors/NotFoundPage";
 import UnauthorizedPage from "@/pages/errors/UnauthorizedPage";
+
+// Teacher Pages — paths matched to sidebarConfig:
+//   /certificates/print        → TeacherPrintsPage
+//   /certificates/reservations → MyReservation
+//   /certificates/history      → MyHistory (file: PrintHistory.jsx)
+//   /students                  → StudentsPage
+import TeacherPrintsPage from "@/pages/teacher/TeacherPrintsPage";
+import MyReservation from "@/pages/teacher/MyReservation";
+import MyHistory from "@/pages/teacher/PrintHistory";
+import StudentsPage from "@/pages/teacher/StudentsPage";
 
 /**
  * Router Configuration
@@ -108,7 +118,7 @@ export const router = createBrowserRouter([
       },
 
       // ======================================================================
-      // ADMIN ONLY ROUTES
+      // ADMIN + SUPERADMIN ROUTES
       // ======================================================================
       {
         path: "teachers",
@@ -119,7 +129,6 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Certificate Management (CRUD operations)
       {
         path: "certificates",
         element: (
@@ -129,7 +138,6 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Certificate Stock Monitoring (Dashboard)
       {
         path: "certificates/stock",
         element: (
@@ -156,6 +164,7 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+
       {
         path: "modules",
         element: (
@@ -168,8 +177,52 @@ export const router = createBrowserRouter([
       {
         path: "backup",
         element: (
-          <ProtectedRoute allowedRoles={["superadmin"]}>
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
             <BackupPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // ======================================================================
+      // TEACHER ONLY ROUTES
+      // Paths harus cocok persis dengan sidebarConfig.jsx:
+      //   /certificates/print        → Print Certificate
+      //   /certificates/reservations → My Reservations
+      //   /certificates/history      → Print History
+      //   /students                  → Students
+      // ======================================================================
+      {
+        path: "certificates/print",
+        element: (
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <TeacherPrintsPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "certificates/reservations",
+        element: (
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <MyReservation />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "certificates/history",
+        element: (
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <MyHistory />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "students",
+        element: (
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <StudentsPage />
           </ProtectedRoute>
         ),
       },
