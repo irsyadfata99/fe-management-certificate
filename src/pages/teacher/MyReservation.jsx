@@ -1,357 +1,560 @@
 /**
- * Teacher Certificates Page
- * Reserve and print certificates
- *
- * FEATURES:
- * - View certificate availability per branch
- * - Reserve certificate (select branch)
- * - Print certificate (fill form):
- *   - Select reserved certificate
- *   - Student name (autocomplete)
- *   - Module selection (from teacher's divisions)
- *   - PTC date
- *   - Upload PDF proof
- * - View active reservations
- * - Release reservation
- * - Upload PDF for printed certificates
- *
- * COMPONENTS TO BUILD:
- * - Two-step process:
- *   Step 1: Reserve Certificate
- *   - Branch selection
- *   - Available count display
- *   - Reserve button
- *
- *   Step 2: Print Certificate
- *   - Reserved certificate dropdown
- *   - Student name input (with autocomplete)
- *   - Module dropdown
- *   - PTC date picker
- *   - PDF upload (optional during print, required later)
- *   - Print button
- *
- * - Active reservations sidebar
- * - Certificate availability widget
- *
- * LAYOUT:
- * - Two columns: Main form (left) + Reservations (right)
- * - Stepper/tabs for Reserve vs Print
+ * PrintCertificatePage v6
+ * - window.open() approach: buka tab baru → inject HTML sertifikat → auto print
+ * - Font di-fetch sebagai base64 di main window (tidak ada CSP block),
+ *   lalu di-embed langsung ke print HTML agar print window tidak perlu
+ *   request ke luar (yang diblokir CSP chrome://print/)
  */
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Printer, CheckCircle2 } from "lucide-react";
 
-export default function TeacherCertificatesPage() {
-  const [activeTab, setActiveTab] = useState("reserve"); // 'reserve' or 'print'
+import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
+import { FormField, FormLabel, FormError } from "@/components/ui/Form";
+
+import {
+  useReserveCertificate,
+  usePrintCertificate,
+} from "@/hooks/certificate/useTeacherCertificates";
+import {
+  useTeacherBranches,
+  useTeacherModules,
+} from "@/hooks/teacher/useTeacherProfile";
+import { printCertificateSchema } from "@/utils/validation/certificateValidation";
+
+// ---------------------------------------------------------------------------
+// Font URLs dari Google Fonts CDN
+// ---------------------------------------------------------------------------
+const FONT_URLS = {
+  playfair:
+    "https://fonts.gstatic.com/s/playfairdisplay/v37/nuFiD-vYSZviVYUb_rj3ij__anPXDTzYh0o.woff2",
+  montserrat:
+    "https://fonts.gstatic.com/s/montserrat/v26/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Ew-.woff2",
+};
+
+// Cache base64 font agar tidak di-fetch ulang setiap kali print
+const fontBase64Cache = {};
+
+/**
+ * Fetch font dari URL dan convert ke base64 data URI
+ * Dijalankan di main window (tidak ada CSP block)
+ */
+const fetchFontAsBase64 = async (name, url) => {
+  if (fontBase64Cache[name]) return fontBase64Cache[name];
+
+  const response = await fetch(url);
+  const buffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = `data:font/woff2;base64,${btoa(binary)}`;
+  fontBase64Cache[name] = base64;
+  return base64;
+};
+
+// ---------------------------------------------------------------------------
+// Format tanggal: "7 February, 2026"
+// ---------------------------------------------------------------------------
+const formatPtcDate = (date) => {
+  if (!date) return "";
+  const d = new Date(date);
+  if (isNaN(d)) return "";
+  return d
+    .toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    })
+    .replace(/(\d+) (\w+) (\d+)/, "$1 $2, $3");
+};
+
+// ---------------------------------------------------------------------------
+// Generate HTML string dengan font base64 ter-embed
+// ---------------------------------------------------------------------------
+const buildPrintHTML = ({
+  studentName,
+  moduleName,
+  ptcDate,
+  divisionName,
+  playfairBase64,
+  montserratBase64,
+}) => {
+  const moduleColor = divisionName?.includes("LK")
+    ? "magenta"
+    : "cornflowerblue";
+  const formattedDate = formatPtcDate(ptcDate);
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Sertifikat</title>
+  <style>
+    /* Embed font langsung sebagai base64 — tidak ada external request */
+    @font-face {
+      font-family: 'Playfair Display';
+      font-style: normal;
+      font-weight: 400;
+      src: url('${playfairBase64}') format('woff2');
+    }
+
+    @font-face {
+      font-family: 'Montserrat';
+      font-style: normal;
+      font-weight: 600;
+      src: url('${montserratBase64}') format('woff2');
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    @page {
+      size: A4 landscape;
+      margin: 0;
+    }
+
+    html, body {
+      width: 297mm;
+      height: 210mm;
+      overflow: hidden;
+    }
+
+    .certificate {
+      width: 297mm;
+      height: 210mm;
+      position: relative;
+      background: #fff;
+    }
+
+    .student-name {
+      position: absolute;
+      top: 98.8mm;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 34pt;
+      font-weight: 400;
+      text-transform: uppercase;
+      color: #000;
+      line-height: 1;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+
+    .module-name {
+      position: absolute;
+      top: 142.20mm;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: 'Montserrat', Arial, sans-serif;
+      font-size: 28pt;
+      font-weight: 600;
+      color: ${moduleColor};
+      line-height: 1;
+      white-space: nowrap;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .ptc-date {
+      position: absolute;
+      top: 176.50mm;
+      left: 76.2mm;
+      font-family: 'Montserrat', Arial, sans-serif;
+      font-size: 18pt;
+      font-weight: 600;
+      color: #000;
+      line-height: 1;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate">
+    <div class="student-name">${studentName || ""}</div>
+    <div class="module-name">${moduleName || ""}</div>
+    <div class="ptc-date">${formattedDate}</div>
+  </div>
+  <script>
+    // Font sudah embedded — langsung tunggu render lalu print
+    document.fonts.ready.then(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.print();
+          window.onafterprint = () => window.close();
+        });
+      });
+    });
+  ${"</script>"}
+</body>
+</html>`;
+};
+
+// ---------------------------------------------------------------------------
+// A4 Certificate Preview (screen only, scaled)
+// ---------------------------------------------------------------------------
+const CertificatePreview = ({ data }) => {
+  const { studentName, moduleName, ptcDate, divisionName } = data;
+  const moduleColor = divisionName?.includes("LK")
+    ? "magenta"
+    : "cornflowerblue";
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div
+      style={{
+        width: "297mm",
+        height: "210mm",
+        position: "relative",
+        boxSizing: "border-box",
+        overflow: "hidden",
+        background: "#fff",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: "98.8mm",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          fontFamily: "'Playfair Display', Georgia, serif",
+          fontSize: "34pt",
+          fontWeight: 400,
+          textTransform: "uppercase",
+          color: "#000",
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+          letterSpacing: "0.02em",
+        }}
+      >
+        {studentName || <span style={{ color: "#ccc" }}>NAMA STUDENT</span>}
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          top: "142.20mm",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          fontFamily: "'Montserrat', Arial, sans-serif",
+          fontSize: "28pt",
+          fontWeight: 600,
+          color: moduleName ? moduleColor : "#ccc",
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {moduleName || "Nama Module"}
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          top: "176.50mm",
+          left: "76.2mm",
+          fontFamily: "'Montserrat', Arial, sans-serif",
+          fontSize: "18pt",
+          fontWeight: 600,
+          color: "#000",
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {ptcDate ? (
+          formatPtcDate(ptcDate)
+        ) : (
+          <span style={{ color: "#ccc" }}>Tanggal PTC</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Main Page
+// ---------------------------------------------------------------------------
+export default function PrintCertificatePage() {
+  const previewContainerRef = useRef(null);
+  const [previewScale, setPreviewScale] = useState(1);
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  useEffect(() => {
+    const el = previewContainerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(([entry]) => {
+      setPreviewScale(entry.contentRect.width / 1122);
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const { data: branches = [] } = useTeacherBranches();
+  const { data: modules = [] } = useTeacherModules();
+
+  const { mutate: reserve, isPending: isReserving } = useReserveCertificate();
+  const { mutate: print } = usePrintCertificate();
+
+  const [reservedCert, setReservedCert] = useState(null);
+  const [selectedBranchId, setSelectedBranchId] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(printCertificateSchema),
+    defaultValues: {
+      certificateId: 0,
+      studentName: "",
+      moduleId: 0,
+      ptcDate: "",
+    },
+  });
+
+  const studentName = useWatch({ control, name: "studentName" });
+  const moduleId = useWatch({ control, name: "moduleId" });
+  const ptcDate = useWatch({ control, name: "ptcDate" });
+
+  const selectedModule = modules.find((m) => m.id === Number(moduleId));
+
+  const previewData = {
+    studentName,
+    moduleName: selectedModule?.name || "",
+    divisionName:
+      selectedModule?.division?.name || selectedModule?.division_name || "",
+    ptcDate,
+  };
+
+  const handleReserve = () => {
+    if (!selectedBranchId) return;
+    reserve(
+      { branchId: Number(selectedBranchId) },
+      {
+        onSuccess: (data) => {
+          setReservedCert(data.certificate);
+          setValue("certificateId", data.certificate.id);
+        },
+      },
+    );
+  };
+
+  const handlePrintClick = () => {
+    handleSubmit(
+      async (values) => {
+        setIsPrinting(true);
+        try {
+          // Fetch font di main window (bebas CSP), lalu embed ke print HTML
+          const [playfairBase64, montserratBase64] = await Promise.all([
+            fetchFontAsBase64("playfair", FONT_URLS.playfair),
+            fetchFontAsBase64("montserrat", FONT_URLS.montserrat),
+          ]);
+
+          const printWindow = window.open("", "_blank");
+          if (!printWindow) {
+            console.warn("window.open blocked by browser");
+            return;
+          }
+
+          printWindow.document.write(
+            buildPrintHTML({
+              ...previewData,
+              playfairBase64,
+              montserratBase64,
+            }),
+          );
+          printWindow.document.close();
+
+          print({ ...values, certificateId: reservedCert?.id });
+        } catch (err) {
+          console.error("Failed to load fonts:", err);
+          // Fallback: buka print window tanpa font embed
+          const printWindow = window.open("", "_blank");
+          if (printWindow) {
+            printWindow.document.write(
+              buildPrintHTML({
+                ...previewData,
+                playfairBase64: "",
+                montserratBase64: "",
+              }),
+            );
+            printWindow.document.close();
+            print({ ...values, certificateId: reservedCert?.id });
+          }
+        } finally {
+          setIsPrinting(false);
+        }
+      },
+      (validationErrors) => {
+        console.log("Validation failed:", validationErrors);
+      },
+    )();
+  };
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Certificate Operations
+        <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white">
+          Print Certificate
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Reserve and print certificates for students
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          Isi semua data di bawah, lalu cetak sertifikat.
         </p>
       </div>
 
-      {/* Process Steps Indicator */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-center">
-          <div className="flex items-center space-x-4">
-            {/* Step 1 */}
-            <div className="flex items-center">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                  activeTab === "reserve"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                1
-              </div>
-              <span className="ml-2 text-sm font-medium text-gray-900">
-                Reserve Certificate
-              </span>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+        {/* ── LEFT: Form Card ── */}
+        <Card className="lg:sticky lg:top-6">
+          <div className="p-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary-500 mb-5">
+              Data Sertifikat
+            </p>
 
-            {/* Arrow */}
-            <span className="text-gray-400">→</span>
+            <div className="flex flex-col gap-4">
+              <FormField>
+                <FormLabel required>Cabang</FormLabel>
+                <Select
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                  disabled={!!reservedCert}
+                  placeholder="Pilih cabang"
+                  fullWidth
+                >
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </Select>
+                {!reservedCert ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-2 w-full"
+                    onClick={handleReserve}
+                    loading={isReserving}
+                    disabled={!selectedBranchId || isReserving}
+                    type="button"
+                  >
+                    Reserve Sertifikat
+                  </Button>
+                ) : (
+                  <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md px-3 py-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>{reservedCert.certificate_number}</span>
+                  </div>
+                )}
+              </FormField>
 
-            {/* Step 2 */}
-            <div className="flex items-center">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                  activeTab === "print"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                2
-              </div>
-              <span className="ml-2 text-sm font-medium text-gray-900">
-                Print Certificate
-              </span>
-            </div>
+              <FormField>
+                <FormLabel required>Nama Student</FormLabel>
+                <Input
+                  {...register("studentName")}
+                  placeholder="Nama lengkap"
+                  error={!!errors.studentName}
+                  disabled={!reservedCert}
+                  fullWidth
+                />
+                <FormError>{errors.studentName?.message}</FormError>
+              </FormField>
 
-            {/* Arrow */}
-            <span className="text-gray-400">→</span>
+              <FormField>
+                <FormLabel required>Nama Module</FormLabel>
+                <Controller
+                  name="moduleId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      placeholder="Pilih module"
+                      error={!!errors.moduleId}
+                      disabled={!reservedCert}
+                      fullWidth
+                    >
+                      {modules.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                />
+                <FormError>{errors.moduleId?.message}</FormError>
+              </FormField>
 
-            {/* Step 3 */}
-            <div className="flex items-center">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-600">
-                3
-              </div>
-              <span className="ml-2 text-sm font-medium text-gray-900">
-                Upload PDF
-              </span>
+              <FormField>
+                <FormLabel required>Tanggal PTC</FormLabel>
+                <Input
+                  type="date"
+                  {...register("ptcDate")}
+                  error={!!errors.ptcDate}
+                  disabled={!reservedCert}
+                  fullWidth
+                />
+                <FormError>{errors.ptcDate?.message}</FormError>
+              </FormField>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Main Form */}
-        <div className="lg:col-span-2">
-          {/* Tabs */}
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex">
-                <button
-                  onClick={() => setActiveTab("reserve")}
-                  className={`w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ${
-                    activeTab === "reserve"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  1. Reserve Certificate
-                </button>
-                <button
-                  onClick={() => setActiveTab("print")}
-                  className={`w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ${
-                    activeTab === "print"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  2. Print Certificate
-                </button>
-              </nav>
-            </div>
+          <div className="px-6 pb-6">
+            <Button
+              variant="primary"
+              leftIcon={<Printer className="w-4 h-4" />}
+              onClick={handlePrintClick}
+              disabled={!reservedCert || isPrinting}
+              loading={isPrinting}
+              className="w-full"
+              type="button"
+            >
+              {isPrinting ? "Memuat font..." : "Print Preview"}
+            </Button>
+          </div>
+        </Card>
 
-            <div className="p-6">
-              {/* Reserve Form */}
-              {activeTab === "reserve" && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
-                      Reserve a Certificate
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-6">
-                      Select a branch to reserve a certificate. You can reserve
-                      up to 5 certificates at once. Reservations expire after 24
-                      hours.
-                    </p>
-                  </div>
-
-                  {/* Branch Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Branch
-                    </label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">Choose a branch...</option>
-                      <option value="1">Head Branch (35 available)</option>
-                      <option value="2">Branch A (10 available)</option>
-                    </select>
-                  </div>
-
-                  {/* Availability Info */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <span className="text-blue-600 text-xl mr-3">ℹ️</span>
-                      <div>
-                        <h4 className="text-sm font-medium text-blue-900">
-                          Certificate Availability
-                        </h4>
-                        <ul className="mt-2 text-sm text-blue-700 space-y-1">
-                          <li>• Head Branch: 35 certificates available</li>
-                          <li>• Branch A: 10 certificates available</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Reserve Button */}
-                  <button className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700">
-                    Reserve Certificate
-                  </button>
-                </div>
-              )}
-
-              {/* Print Form */}
-              {activeTab === "print" && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
-                      Print Certificate
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-6">
-                      Fill in the student details to print the certificate.
-                    </p>
-                  </div>
-
-                  {/* Reserved Certificate Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Reserved Certificate *
-                    </label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">Choose a reserved certificate...</option>
-                      <option value="123">No. 000123 (Reserved 1h ago)</option>
-                      <option value="124">No. 000124 (Reserved 30m ago)</option>
-                      <option value="125">No. 000125 (Reserved 10m ago)</option>
-                    </select>
-                  </div>
-
-                  {/* Student Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Student Name *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter student name (min 2 characters)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Start typing to search existing students or enter new name
-                    </p>
-                  </div>
-
-                  {/* Module Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Module *
-                    </label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">Choose a module...</option>
-                      <option value="1">KID-BEG - Kids Beginner</option>
-                      <option value="2">KID-INT - Kids Intermediate</option>
-                      <option value="3">TEEN-BEG - Teens Beginner</option>
-                    </select>
-                  </div>
-
-                  {/* PTC Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      PTC Date *
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Date cannot be in the future
-                    </p>
-                  </div>
-
-                  {/* PDF Upload (Optional) */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload PDF (Optional)
-                    </label>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      You can upload the PDF now or later from Print History
-                    </p>
-                  </div>
-
-                  {/* Print Button */}
-                  <button className="w-full px-4 py-3 bg-green-600 text-white font-medium rounded-md hover:bg-green-700">
-                    Print Certificate
-                  </button>
-                </div>
+        {/* ── RIGHT: A4 Preview ── */}
+        <Card padding={false} className="overflow-hidden">
+          <div
+            ref={previewContainerRef}
+            className="relative w-full bg-neutral-100 dark:bg-neutral-900/60"
+            style={{ aspectRatio: "297 / 210" }}
+          >
+            <div className="absolute top-3 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
+              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
+                Preview A4
+              </p>
+              {reservedCert && (
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+                  {reservedCert.certificate_number}
+                </span>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Right: Active Reservations */}
-        <div className="lg:col-span-1">
-          <div className="bg-white shadow rounded-lg sticky top-6">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">
-                Active Reservations (3/5)
-              </h3>
-            </div>
-            <div className="px-6 py-4">
-              <div className="space-y-3">
-                {/* Reservation Item */}
-                <div className="p-3 border border-gray-200 rounded">
-                  <div className="flex items-start justify-between mb-2">
-                    <p className="text-sm font-mono font-medium text-gray-900">
-                      No. 000123
-                    </p>
-                    <button className="text-xs text-red-600 hover:text-red-700">
-                      Release
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500">Reserved 1 hour ago</p>
-                  <p className="text-xs text-orange-600 mt-1">
-                    ⏰ Expires in 23 hours
-                  </p>
-                </div>
-
-                <div className="p-3 border border-gray-200 rounded">
-                  <div className="flex items-start justify-between mb-2">
-                    <p className="text-sm font-mono font-medium text-gray-900">
-                      No. 000124
-                    </p>
-                    <button className="text-xs text-red-600 hover:text-red-700">
-                      Release
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Reserved 30 minutes ago
-                  </p>
-                  <p className="text-xs text-orange-600 mt-1">
-                    ⏰ Expires in 23.5 hours
-                  </p>
-                </div>
-
-                <div className="p-3 border border-gray-200 rounded">
-                  <div className="flex items-start justify-between mb-2">
-                    <p className="text-sm font-mono font-medium text-gray-900">
-                      No. 000125
-                    </p>
-                    <button className="text-xs text-red-600 hover:text-red-700">
-                      Release
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Reserved 10 minutes ago
-                  </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    ⏰ Expires in 23.8 hours
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 p-3 bg-gray-50 rounded text-center">
-                <p className="text-xs text-gray-600">
-                  You have <span className="font-medium">2 slots</span> left
-                </p>
-              </div>
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "1122px",
+                transformOrigin: "top left",
+                transform: `scale(${previewScale})`,
+              }}
+            >
+              <CertificatePreview data={previewData} />
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
