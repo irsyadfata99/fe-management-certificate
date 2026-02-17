@@ -1,14 +1,44 @@
 /**
  * Sidebar Navigation Configuration
  * Role-based menu items untuk SuperAdmin, Admin, dan Teacher
+ *
+ * Route map:
+ *   /dashboard               — semua role
+ *   /profile                 — semua role
+ *   /branches                — superadmin
+ *   /certificates            — admin
+ *   /certificates/stock      — admin
+ *   /certificates/logs       — admin
+ *   /teachers                — admin
+ *   /divisions               — admin  ← DivisionsPage
+ *   /modules                 — admin
+ *   /backup                  — admin
+ *   /certificates/print      — teacher
+ *   /certificates/reservations — teacher
+ *   /certificates/history    — teacher
+ *   /students                — teacher
  */
 
-import { LayoutDashboard, Building2, Layers, BookOpen, Users, Award, FileText, UserCircle, Package, ClipboardList, Printer, Clock, Database } from "lucide-react";
+import {
+  LayoutDashboard,
+  Building2,
+  Layers,
+  BookOpen,
+  Users,
+  Award,
+  FileText,
+  UserCircle,
+  Package,
+  ClipboardList,
+  Printer,
+  Clock,
+  Database,
+} from "lucide-react";
 
 /**
  * Menu structure per role
- * Format: { label, path, icon, badge?, children? }
- * children: sub-menu items (untuk grouped navigation)
+ * Format: { label, path, icon, badge?, description?, children? }
+ * children: sub-menu items (grouped navigation)
  */
 export const SIDEBAR_MENUS = {
   superadmin: [
@@ -118,16 +148,13 @@ export const SIDEBAR_MENUS = {
 };
 
 /**
- * Get menu items for current user role
- * FIX: Handle various role formats from backend (SuperAdmin, Admin, Teacher)
+ * Get menu items for current user role.
+ * Handles various role formats from backend (e.g. "SuperAdmin", "super_admin", "admin")
  */
 export const getMenuItems = (role) => {
-  if (!role) {
-    console.warn("[Sidebar] No role provided to getMenuItems");
-    return [];
-  }
+  if (!role) return [];
 
-  const normalizedRole = role.toLowerCase().replace(/[_\s-]/g, "");
+  const normalized = role.toLowerCase().replace(/[_\s-]/g, "");
 
   const roleMap = {
     superadmin: "superadmin",
@@ -135,24 +162,22 @@ export const getMenuItems = (role) => {
     teacher: "teacher",
   };
 
-  const mappedRole = roleMap[normalizedRole];
+  const mapped = roleMap[normalized];
 
-  console.log("[Sidebar] Original role:", role);
-  console.log("[Sidebar] Normalized role:", normalizedRole);
-  console.log("[Sidebar] Mapped role:", mappedRole);
-  console.log("[Sidebar] Menu items found:", !!SIDEBAR_MENUS[mappedRole]);
-
-  const menuItems = SIDEBAR_MENUS[mappedRole] || [];
-
-  if (!menuItems.length) {
-    console.warn(`[Sidebar] No menu items found for role: ${role}`);
+  if (!mapped) {
+    if (import.meta.env.DEV) {
+      console.warn(
+        `[Sidebar] Unknown role: "${role}" (normalized: "${normalized}")`,
+      );
+    }
+    return [];
   }
 
-  return menuItems;
+  return SIDEBAR_MENUS[mapped] ?? [];
 };
 
 /**
- * Bottom navigation items (common untuk semua roles)
+ * Bottom navigation items — ditampilkan di semua role
  */
 export const BOTTOM_MENU_ITEMS = [
   {

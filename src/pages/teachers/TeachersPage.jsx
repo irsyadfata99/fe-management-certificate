@@ -253,14 +253,16 @@ export default function TeachersPage() {
           </FormField>
 
           {/* Footer */}
-          <ModalFooter
-            onCancel={handleClose}
-            onConfirm={handleSubmit(onSubmit)}
-            cancelText="Cancel"
-            confirmText="Create Teacher"
-            confirmLoading={createTeacherMutation.isPending}
-            confirmDisabled={createTeacherMutation.isPending}
-          />
+          <div className="pt-4 mt-2 border-t border-neutral-200 dark:border-neutral-700 flex justify-end gap-2">
+            <ModalFooter
+              onCancel={handleClose}
+              onConfirm={handleSubmit(onSubmit)}
+              cancelText="Cancel"
+              confirmText="Create Teacher"
+              confirmLoading={createTeacherMutation.isPending}
+              confirmDisabled={createTeacherMutation.isPending}
+            />
+          </div>
         </form>
       </Modal>
     );
@@ -380,14 +382,16 @@ export default function TeachersPage() {
           </FormField>
 
           {/* Footer */}
-          <ModalFooter
-            onCancel={handleClose}
-            onConfirm={handleSubmit(onSubmit)}
-            cancelText="Cancel"
-            confirmText="Update Teacher"
-            confirmLoading={updateTeacherMutation.isPending}
-            confirmDisabled={updateTeacherMutation.isPending}
-          />
+          <div className="pt-4 mt-2 border-t border-neutral-200 dark:border-neutral-700 flex justify-end gap-2">
+            <ModalFooter
+              onCancel={handleClose}
+              onConfirm={handleSubmit(onSubmit)}
+              cancelText="Cancel"
+              confirmText="Update Teacher"
+              confirmLoading={updateTeacherMutation.isPending}
+              confirmDisabled={updateTeacherMutation.isPending}
+            />
+          </div>
         </form>
       </Modal>
     );

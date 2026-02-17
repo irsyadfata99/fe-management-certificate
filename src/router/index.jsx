@@ -1,11 +1,11 @@
 /**
  * Router Configuration
  * App routes dengan role-based protection
- * ✅ FIXED: Using RoleGuard instead of ProtectedRoute for role-specific routes
+ * UPDATED: Added CertificateStockPage & CertificateLogsPage
  */
 
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import { ProtectedRoute, RoleGuard } from "@/components/auth/ProtectedRoute";
+import { ProtectedRoute, PublicRoute } from "@/components/auth/ProtectedRoute";
 
 // Layouts
 import { Layout } from "@/components/layout/Layout";
@@ -24,6 +24,16 @@ import BranchesPage from "@/pages/branches/BranchesPage";
 import TeachersPage from "@/pages/teachers/TeachersPage";
 import CertificatesPage from "@/pages/certificates/CertificatesPage";
 import CertificateStockPage from "@/pages/certificates/CertificateStockPage";
+import CertificateLogsPage from "@/pages/certificates/CertificateLogsPage";
+
+// Divison pages
+import DivisionsPage from "@/pages/divisions/DivisionsPage";
+
+// Modules pages
+import ModulesPage from "@/pages/modules/ModulesPage";
+
+// Backup pages
+import BackupPage from "@/pages/backup/BackupPage";
 
 // Showcase (Development)
 import ComponentShowcasePage from "@/pages/showcase/ComponentShowcasePage";
@@ -41,7 +51,11 @@ export const router = createBrowserRouter([
   // ==========================================================================
   {
     path: "/login",
-    element: <LoginPage />,
+    element: (
+      <PublicRoute>
+        <LoginPage />
+      </PublicRoute>
+    ),
   },
 
   // ==========================================================================
@@ -87,22 +101,21 @@ export const router = createBrowserRouter([
       {
         path: "branches",
         element: (
-          <RoleGuard allowedRoles={["superadmin"]}>
+          <ProtectedRoute allowedRoles={["superadmin"]}>
             <BranchesPage />
-          </RoleGuard>
+          </ProtectedRoute>
         ),
       },
 
       // ======================================================================
-      // ADMIN ONLY ROUTES (Admin + SuperAdmin)
-      // ✅ FIXED: Using RoleGuard instead of ProtectedRoute
+      // ADMIN ONLY ROUTES
       // ======================================================================
       {
         path: "teachers",
         element: (
-          <RoleGuard allowedRoles={["admin", "superadmin"]}>
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
             <TeachersPage />
-          </RoleGuard>
+          </ProtectedRoute>
         ),
       },
 
@@ -110,9 +123,9 @@ export const router = createBrowserRouter([
       {
         path: "certificates",
         element: (
-          <RoleGuard allowedRoles={["admin", "superadmin"]}>
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
             <CertificatesPage />
-          </RoleGuard>
+          </ProtectedRoute>
         ),
       },
 
@@ -120,9 +133,44 @@ export const router = createBrowserRouter([
       {
         path: "certificates/stock",
         element: (
-          <RoleGuard allowedRoles={["admin", "superadmin"]}>
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
             <CertificateStockPage />
-          </RoleGuard>
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "certificates/logs",
+        element: (
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+            <CertificateLogsPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "divisions",
+        element: (
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+            <DivisionsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "modules",
+        element: (
+          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+            <ModulesPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "backup",
+        element: (
+          <ProtectedRoute allowedRoles={["superadmin"]}>
+            <BackupPage />
+          </ProtectedRoute>
         ),
       },
     ],

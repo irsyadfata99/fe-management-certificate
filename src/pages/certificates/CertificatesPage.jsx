@@ -323,14 +323,16 @@ function BulkCreateModal({ isOpen, onClose, onSubmit, isCreating }) {
         )}
 
         {/* Footer */}
-        <ModalFooter
-          onCancel={handleClose}
-          onConfirm={handleSubmit(handleFormSubmit)}
-          cancelText="Cancel"
-          confirmText="Create Certificates"
-          confirmLoading={isCreating}
-          confirmDisabled={isCreating || previewCount === 0}
-        />
+        <div className="pt-4 mt-2 border-t border-neutral-200 dark:border-neutral-700 flex justify-end gap-2">
+          <ModalFooter
+            onCancel={handleClose}
+            onConfirm={handleSubmit(handleFormSubmit)}
+            cancelText="Cancel"
+            confirmText="Create Certificates"
+            confirmLoading={isCreating}
+            confirmDisabled={isCreating || previewCount === 0}
+          />
+        </div>
       </form>
     </Modal>
   );
@@ -456,20 +458,22 @@ function MigrateModal({
         )}
 
         {/* Footer */}
-        <ModalFooter
-          onCancel={handleClose}
-          onConfirm={handleSubmit(handleFormSubmit)}
-          cancelText="Cancel"
-          confirmText="Migrate Certificates"
-          confirmLoading={isMigrating}
-          confirmDisabled={
-            isMigrating ||
-            previewCount === 0 ||
-            !toBranchId ||
-            subBranches.length === 0
-          }
-          confirmVariant="primary"
-        />
+        <div className="pt-4 mt-2 border-t border-neutral-200 dark:border-neutral-700 flex justify-end gap-2">
+          <ModalFooter
+            onCancel={handleClose}
+            onConfirm={handleSubmit(handleFormSubmit)}
+            cancelText="Cancel"
+            confirmText="Migrate Certificates"
+            confirmLoading={isMigrating}
+            confirmDisabled={
+              isMigrating ||
+              previewCount === 0 ||
+              !toBranchId ||
+              subBranches.length === 0
+            }
+            confirmVariant="primary"
+          />
+        </div>
       </form>
     </Modal>
   );

@@ -7,13 +7,15 @@ import api from "./client";
 import { API_ENDPOINTS } from "@/utils/constants/endpoints";
 
 /**
- * Get all modules
+ * Get all modules (paginated)
  * @param {Object} [params]
  * @param {boolean} [params.includeInactive=false] - Include inactive modules
- * @returns {Promise<{modules: Array}>}
+ * @param {number}  [params.page=1]               - Page number (1-indexed)
+ * @param {number}  [params.limit=8]              - Items per page
+ * @returns {Promise<{ modules: Array, pagination: Object }>}
  *
  * @example
- * const { modules } = await getAllModules({ includeInactive: true });
+ * const { modules, pagination } = await getAllModules({ page: 2, limit: 8 });
  */
 export const getAllModules = async (params = {}) => {
   const { data } = await api.get(API_ENDPOINTS.MODULES.GET_ALL, { params });
