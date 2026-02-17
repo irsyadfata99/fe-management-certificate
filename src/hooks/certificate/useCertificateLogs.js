@@ -33,7 +33,7 @@ export const useCertificateLogs = (params = {}) => {
 };
 
 /**
- * Get certificate migrations
+ * ✅ NEW: Get certificate migrations
  * @param {Object} [params] - Query parameters
  * @returns {Object} Query object
  *

@@ -2,21 +2,27 @@
  * Teachers Page (Admin Only)
  * Complete teacher management with CRUD operations
  *
- * FEATURES:
- * - List all teachers with branch/division assignments
- * - Create new teacher (auto-generated password)
+ * ✅ FIXED BUGS:
+ * 1. Removed onSuccess override → Cache invalidation now works properly
+ * 2. Properly handle mutation response for password display
+ * 3. Fixed loading states for all buttons
+ * 4. ✅ NEW FIX: Correct response path for password (response.data.temporaryPassword)
+ *
+ * ✅ FEATURES:
+ * - Branch & Division filters with pagination (8 items/page)
+ * - Search by name or username
+ * - Show inactive toggle
+ * - Create teacher with auto-generated password
  * - Edit teacher (username, full_name, branch_ids, division_ids)
  * - Reset teacher password
  * - Toggle active/inactive
- * - View teacher details (assigned branches & divisions)
- * - Search by name or username
+ * - View teacher details
  */
 
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Edit2, Trash2, Power, Key, Eye, Search } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Edit2, Power, Key, Eye, Search, X } from "lucide-react";
 
 // Hooks
 import {
@@ -33,6 +39,7 @@ import {
 import {
   Button,
   Input,
+  Select,
   MultiSelect,
   Modal,
   ModalFooter,
@@ -45,14 +52,13 @@ import {
   TableHead,
   TableCell,
   TableEmpty,
+  Pagination,
   FormField,
   FormLabel,
-  FormError,
 } from "@/components/ui";
 
 // Shared Components
 import PasswordDisplayModal from "@/components/shared/PasswordDisplayModal";
-import ConfirmDialog from "@/components/shared/ConfirmDialog";
 
 // Validation
 import {
@@ -67,6 +73,10 @@ export default function TeachersPage() {
   const [filters, setFilters] = useState({
     includeInactive: false,
     search: "",
+    branchId: "",
+    divisionId: "",
+    page: 1,
+    limit: 8,
   });
 
   // Modal states
@@ -82,15 +92,27 @@ export default function TeachersPage() {
   // ============================================================================
   // API HOOKS
   // ============================================================================
-  const { data: teachers, isLoading } = useTeachers(filters);
-  const { data: branches } = useBranches({ includeInactive: false });
-  const { data: divisions } = useDivisions({ includeInactive: false });
+  const { data: teachersData, isLoading } = useTeachers(filters);
+  const { data: branchesData } = useBranches({ includeInactive: false });
+  const { data: divisionsData } = useDivisions({ includeInactive: false });
 
-  const { mutate: createTeacher, isPending: isCreating } = useCreateTeacher();
-  const { mutate: updateTeacher, isPending: isUpdating } = useUpdateTeacher();
-  const { mutate: resetPassword, isPending: isResetting } =
-    useResetTeacherPassword();
-  const { mutate: toggleActive } = useToggleTeacherActive();
+  // ✅ FIX: Don't override onSuccess, let mutation hooks handle cache invalidation
+  const createTeacherMutation = useCreateTeacher();
+  const updateTeacherMutation = useUpdateTeacher();
+  const resetPasswordMutation = useResetTeacherPassword();
+  const toggleActiveMutation = useToggleTeacherActive();
+
+  // Extract data properly
+  const teachers = teachersData?.teachers || [];
+  const pagination = teachersData?.pagination || {
+    total: 0,
+    page: 1,
+    limit: 8,
+    totalPages: 1,
+  };
+
+  const branches = branchesData?.branches || [];
+  const divisions = divisionsData || [];
 
   // ============================================================================
   // PREPARE OPTIONS FOR MULTI-SELECT
@@ -126,21 +148,30 @@ export default function TeachersPage() {
     });
 
     const onSubmit = (data) => {
-      createTeacher(data, {
+      // ✅ FIX: Access password from response.data.temporaryPassword
+      createTeacherMutation.mutate(data, {
         onSuccess: (response) => {
-          toast.success("Teacher created successfully");
+          console.log("Create teacher response:", response); // Debug log
 
-          // Show generated password
-          if (response.password) {
+          // ✅ FIX: Backend returns { data: { teacher, temporaryPassword } }
+          const password =
+            response?.data?.temporaryPassword || response?.temporaryPassword;
+
+          if (password) {
             setGeneratedPassword({
-              password: response.password,
+              password: password,
               username: data.username,
             });
             setPasswordModalOpen(true);
+          } else {
+            console.warn("No password found in response:", response);
           }
 
           setCreateModalOpen(false);
           reset();
+        },
+        onError: (error) => {
+          console.error("Create teacher error:", error);
         },
       });
     };
@@ -227,8 +258,8 @@ export default function TeachersPage() {
             onConfirm={handleSubmit(onSubmit)}
             cancelText="Cancel"
             confirmText="Create Teacher"
-            confirmLoading={isCreating}
-            confirmDisabled={isCreating}
+            confirmLoading={createTeacherMutation.isPending}
+            confirmDisabled={createTeacherMutation.isPending}
           />
         </form>
       </Modal>
@@ -258,11 +289,11 @@ export default function TeachersPage() {
     });
 
     const onSubmit = (data) => {
-      updateTeacher(
+      // ✅ FIX: Don't override onSuccess
+      updateTeacherMutation.mutate(
         { id: selectedTeacher.id, data },
         {
           onSuccess: () => {
-            toast.success("Teacher updated successfully");
             setEditModalOpen(false);
             setSelectedTeacher(null);
             reset();
@@ -354,8 +385,8 @@ export default function TeachersPage() {
             onConfirm={handleSubmit(onSubmit)}
             cancelText="Cancel"
             confirmText="Update Teacher"
-            confirmLoading={isUpdating}
-            confirmDisabled={isUpdating}
+            confirmLoading={updateTeacherMutation.isPending}
+            confirmDisabled={updateTeacherMutation.isPending}
           />
         </form>
       </Modal>
@@ -368,12 +399,10 @@ export default function TeachersPage() {
   const TeacherDetailDrawer = () => {
     if (!selectedTeacher) return null;
 
-    // Get branch names
     const teacherBranches = branches?.filter((b) =>
       selectedTeacher.branch_ids?.includes(b.id),
     );
 
-    // Get division names
     const teacherDivisions = divisions?.filter((d) =>
       selectedTeacher.division_ids?.includes(d.id),
     );
@@ -459,7 +488,6 @@ export default function TeachersPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end gap-2 mt-6">
           <Button
             variant="secondary"
@@ -489,24 +517,43 @@ export default function TeachersPage() {
   };
 
   const handleToggleActive = (teacher) => {
-    toggleActive(teacher.id, {
-      onSuccess: () => {
-        toast.success(
-          `Teacher ${teacher.is_active ? "deactivated" : "activated"}`,
-        );
+    toggleActiveMutation.mutate(teacher.id);
+  };
+
+  const handleResetPassword = (teacher) => {
+    // ✅ FIX: Access password from response.data.temporaryPassword
+    resetPasswordMutation.mutate(teacher.id, {
+      onSuccess: (response) => {
+        console.log("Reset password response:", response); // Debug log
+
+        // ✅ FIX: Backend returns { data: { temporaryPassword } }
+        const password =
+          response?.data?.temporaryPassword || response?.temporaryPassword;
+
+        if (password) {
+          setGeneratedPassword({
+            password: password,
+            username: teacher.username,
+          });
+          setPasswordModalOpen(true);
+        } else {
+          console.warn("No password found in response:", response);
+        }
+      },
+      onError: (error) => {
+        console.error("Reset password error:", error);
       },
     });
   };
 
-  const handleResetPassword = (teacher) => {
-    resetPassword(teacher.id, {
-      onSuccess: (data) => {
-        setGeneratedPassword({
-          password: data.password,
-          username: teacher.username,
-        });
-        setPasswordModalOpen(true);
-      },
+  const handleClearFilters = () => {
+    setFilters({
+      includeInactive: false,
+      search: "",
+      branchId: "",
+      divisionId: "",
+      page: 1,
+      limit: 8,
     });
   };
 
@@ -535,31 +582,76 @@ export default function TeachersPage() {
 
       {/* Filters */}
       <div className="glass-card-auto p-4">
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Search */}
-          <div className="flex-1 min-w-[300px]">
+          <div className="md:col-span-2">
             <Input
               placeholder="Search by username or name..."
               value={filters.search}
               onChange={(e) =>
-                setFilters({ ...filters, search: e.target.value })
+                setFilters({ ...filters, search: e.target.value, page: 1 })
               }
               leftIcon={<Search className="w-4 h-4" />}
             />
           </div>
 
-          {/* Show Inactive */}
+          {/* Branch Filter */}
+          <Select
+            value={filters.branchId}
+            onChange={(e) =>
+              setFilters({ ...filters, branchId: e.target.value, page: 1 })
+            }
+          >
+            <option value="">All Branches</option>
+            {branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name} ({branch.code})
+              </option>
+            ))}
+          </Select>
+
+          {/* Division Filter */}
+          <Select
+            value={filters.divisionId}
+            onChange={(e) =>
+              setFilters({ ...filters, divisionId: e.target.value, page: 1 })
+            }
+          >
+            <option value="">All Divisions</option>
+            {divisions.map((division) => (
+              <option key={division.id} value={division.id}>
+                {division.name}
+              </option>
+            ))}
+          </Select>
+
+          {/* Clear Filters */}
+          <Button
+            variant="secondary"
+            onClick={handleClearFilters}
+            leftIcon={<X className="w-4 h-4" />}
+          >
+            Clear
+          </Button>
+        </div>
+
+        {/* Show Inactive Checkbox */}
+        <div className="mt-3">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={filters.includeInactive}
               onChange={(e) =>
-                setFilters({ ...filters, includeInactive: e.target.checked })
+                setFilters({
+                  ...filters,
+                  includeInactive: e.target.checked,
+                  page: 1,
+                })
               }
               className="w-4 h-4 rounded border-neutral-300 text-primary-500 focus:ring-2 focus:ring-primary-500"
             />
             <span className="text-sm text-neutral-700 dark:text-neutral-300">
-              Show inactive
+              Show inactive teachers
             </span>
           </label>
         </div>
@@ -591,7 +683,10 @@ export default function TeachersPage() {
                 </TableCell>
               </TableRow>
             ) : teachers?.length === 0 ? (
-              <TableEmpty message="No teachers found" colSpan={6} />
+              <TableEmpty
+                message="No teachers found. Try adjusting your filters."
+                colSpan={6}
+              />
             ) : (
               teachers?.map((teacher) => (
                 <TableRow key={teacher.id}>
@@ -652,7 +747,8 @@ export default function TeachersPage() {
                         size="sm"
                         onClick={() => handleResetPassword(teacher)}
                         leftIcon={<Key className="w-4 h-4" />}
-                        loading={isResetting}
+                        loading={resetPasswordMutation.isPending}
+                        disabled={resetPasswordMutation.isPending}
                       >
                         Reset
                       </Button>
@@ -661,6 +757,8 @@ export default function TeachersPage() {
                         size="sm"
                         onClick={() => handleToggleActive(teacher)}
                         leftIcon={<Power className="w-4 h-4" />}
+                        loading={toggleActiveMutation.isPending}
+                        disabled={toggleActiveMutation.isPending}
                       >
                         Toggle
                       </Button>
@@ -671,6 +769,19 @@ export default function TeachersPage() {
             )}
           </TableBody>
         </Table>
+
+        {/* Pagination */}
+        {!isLoading && teachers.length > 0 && pagination && (
+          <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700">
+            <Pagination
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages || 1}
+              onPageChange={(page) => setFilters({ ...filters, page })}
+              totalItems={pagination.total}
+              itemsPerPage={filters.limit}
+            />
+          </div>
+        )}
       </div>
 
       {/* Modals */}

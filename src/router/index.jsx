@@ -1,11 +1,11 @@
 /**
  * Router Configuration
  * App routes dengan role-based protection
- * UPDATED: Added CertificateStockPage
+ * ✅ FIXED: Using RoleGuard instead of ProtectedRoute for role-specific routes
  */
 
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import { ProtectedRoute, PublicRoute } from "@/components/auth/ProtectedRoute";
+import { ProtectedRoute, RoleGuard } from "@/components/auth/ProtectedRoute";
 
 // Layouts
 import { Layout } from "@/components/layout/Layout";
@@ -41,11 +41,7 @@ export const router = createBrowserRouter([
   // ==========================================================================
   {
     path: "/login",
-    element: (
-      <PublicRoute>
-        <LoginPage />
-      </PublicRoute>
-    ),
+    element: <LoginPage />,
   },
 
   // ==========================================================================
@@ -91,21 +87,22 @@ export const router = createBrowserRouter([
       {
         path: "branches",
         element: (
-          <ProtectedRoute allowedRoles={["superadmin"]}>
+          <RoleGuard allowedRoles={["superadmin"]}>
             <BranchesPage />
-          </ProtectedRoute>
+          </RoleGuard>
         ),
       },
 
       // ======================================================================
-      // ADMIN ONLY ROUTES
+      // ADMIN ONLY ROUTES (Admin + SuperAdmin)
+      // ✅ FIXED: Using RoleGuard instead of ProtectedRoute
       // ======================================================================
       {
         path: "teachers",
         element: (
-          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+          <RoleGuard allowedRoles={["admin", "superadmin"]}>
             <TeachersPage />
-          </ProtectedRoute>
+          </RoleGuard>
         ),
       },
 
@@ -113,9 +110,9 @@ export const router = createBrowserRouter([
       {
         path: "certificates",
         element: (
-          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+          <RoleGuard allowedRoles={["admin", "superadmin"]}>
             <CertificatesPage />
-          </ProtectedRoute>
+          </RoleGuard>
         ),
       },
 
@@ -123,9 +120,9 @@ export const router = createBrowserRouter([
       {
         path: "certificates/stock",
         element: (
-          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+          <RoleGuard allowedRoles={["admin", "superadmin"]}>
             <CertificateStockPage />
-          </ProtectedRoute>
+          </RoleGuard>
         ),
       },
     ],

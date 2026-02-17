@@ -1,0 +1,164 @@
+/**
+ * DateRangePicker Component
+ * Reusable date range selector with clear and apply actions
+ */
+
+import { useState } from "react";
+import { Calendar } from "lucide-react";
+import { Input } from "./Input";
+import { Button } from "./Button";
+import { cn } from "@/utils/helpers/cn";
+
+/**
+ * DateRangePicker
+ * @param {Object} props
+ * @param {string} props.startDate - Start date (YYYY-MM-DD)
+ * @param {string} props.endDate - End date (YYYY-MM-DD)
+ * @param {Function} props.onStartDateChange - Start date change handler
+ * @param {Function} props.onEndDateChange - End date change handler
+ * @param {Function} props.onClear - Clear handler
+ * @param {Function} props.onApply - Apply handler
+ * @param {string} props.className - Additional classes
+ * @param {boolean} props.disabled - Disabled state
+ */
+export const DateRangePicker = ({
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
+  onClear,
+  onApply,
+  className,
+  disabled = false,
+}) => {
+  // Validate date range
+  const [error, setError] = useState("");
+
+  const handleStartDateChange = (e) => {
+    const newStartDate = e.target.value;
+    onStartDateChange(newStartDate);
+
+    // Validate: start date should not be after end date
+    if (endDate && newStartDate && newStartDate > endDate) {
+      setError("Start date cannot be after end date");
+    } else {
+      setError("");
+    }
+  };
+
+  const handleEndDateChange = (e) => {
+    const newEndDate = e.target.value;
+    onEndDateChange(newEndDate);
+
+    // Validate: end date should not be before start date
+    if (startDate && newEndDate && newEndDate < startDate) {
+      setError("End date cannot be before start date");
+    } else {
+      setError("");
+    }
+  };
+
+  const handleClear = () => {
+    setError("");
+    onClear?.();
+  };
+
+  const handleApply = () => {
+    if (!error) {
+      onApply?.();
+    }
+  };
+
+  const hasDateRange = startDate || endDate;
+
+  return (
+    <div className={cn("space-y-3", className)}>
+      {/* Date Inputs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Start Date */}
+        <Input
+          type="date"
+          value={startDate}
+          onChange={handleStartDateChange}
+          placeholder="Start Date"
+          leftIcon={<Calendar className="w-4 h-4" />}
+          error={!!error}
+          disabled={disabled}
+        />
+
+        {/* End Date */}
+        <Input
+          type="date"
+          value={endDate}
+          onChange={handleEndDateChange}
+          placeholder="End Date"
+          leftIcon={<Calendar className="w-4 h-4" />}
+          error={!!error}
+          disabled={disabled}
+        />
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <p className="text-xs text-danger-600 dark:text-danger-400">{error}</p>
+      )}
+
+      {/* Action Buttons */}
+      {hasDateRange && (
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleClear}
+            disabled={disabled}
+            fullWidth
+          >
+            Clear Range
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={handleApply}
+            disabled={disabled || !!error}
+            fullWidth
+          >
+            Apply Filter
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * DateRangeDisplay - Display selected date range
+ * @param {Object} props
+ * @param {string} props.startDate
+ * @param {string} props.endDate
+ */
+export const DateRangeDisplay = ({ startDate, endDate }) => {
+  if (!startDate && !endDate) return null;
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  return (
+    <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+      <Calendar className="w-4 h-4" />
+      <span>
+        {startDate && formatDate(startDate)}
+        {startDate && endDate && " - "}
+        {endDate && formatDate(endDate)}
+      </span>
+    </div>
+  );
+};
+
+export default DateRangePicker;

@@ -10,6 +10,8 @@
  * - Proper pagination
  * - Fixed console.log in JSX (removed)
  * - Fixed migrate validation
+ * - ✅ FIXED: Dark mode text readability in preview boxes
+ * - ✅ FIXED: Cannot migrate to head branch (SND) - filtered from dropdown
  *
  * FEATURES:
  * - Stats cards (Total, In Stock, Reserved, Printed) - REAL DATA
@@ -306,12 +308,15 @@ function BulkCreateModal({ isOpen, onClose, onSubmit, isCreating }) {
 
         {/* Preview */}
         {previewCount > 0 && (
-          <div className="p-4 bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-800 rounded-lg">
-            <p className="text-sm text-primary-900 dark:text-primary-100">
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-500/30 rounded-lg">
+            <p className="text-sm text-yellow-900 dark:text-yellow-200">
               <span className="font-semibold">Preview:</span> Will create{" "}
-              <span className="font-bold">{previewCount}</span> certificates
+              <span className="font-bold text-yellow-950 dark:text-yellow-400">
+                {previewCount}
+              </span>{" "}
+              certificates
             </p>
-            <p className="text-xs text-primary-700 dark:text-primary-300 mt-1">
+            <p className="text-xs text-yellow-800 dark:text-yellow-300/80 mt-1">
               Range: {formatCertificateRange(startNumber, endNumber)}
             </p>
           </div>
@@ -332,7 +337,7 @@ function BulkCreateModal({ isOpen, onClose, onSubmit, isCreating }) {
 }
 
 // ============================================================================
-// MIGRATE MODAL
+// MIGRATE MODAL - ✅ FIXED: Filter head branches from dropdown
 // ============================================================================
 function MigrateModal({
   isOpen,
@@ -358,6 +363,9 @@ function MigrateModal({
   const previewCount =
     startNumber && endNumber ? getCertificateCount(startNumber, endNumber) : 0;
 
+  // ✅ FIX: Filter out head branches - only show sub branches
+  const subBranches = branches.filter((branch) => !branch.is_head_branch);
+
   const handleFormSubmit = (data) => {
     onSubmit(data);
     reset();
@@ -373,7 +381,7 @@ function MigrateModal({
       open={isOpen}
       onClose={handleClose}
       title="Migrate Certificates"
-      description="Move certificates to another branch"
+      description="Move certificates to a sub branch"
       size="md"
     >
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
@@ -401,9 +409,9 @@ function MigrateModal({
           />
         </FormField>
 
-        {/* Target Branch */}
+        {/* Target Branch - ✅ FIXED: Only show sub branches */}
         <FormField>
-          <FormLabel required>Target Branch</FormLabel>
+          <FormLabel required>Target Branch (Sub Branch Only)</FormLabel>
           <Select
             {...register("toBranchId", { valueAsNumber: true })}
             defaultValue=""
@@ -411,23 +419,37 @@ function MigrateModal({
             helperText={errors.toBranchId?.message}
             disabled={isLoadingBranches}
           >
-            <option value="">Select target branch</option>
-            {branches.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name} ({branch.code})
+            <option value="">Select target sub branch</option>
+            {subBranches.length === 0 ? (
+              <option value="" disabled>
+                No sub branches available
               </option>
-            ))}
+            ) : (
+              subBranches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name} ({branch.code})
+                </option>
+              ))
+            )}
           </Select>
+          {subBranches.length === 0 && (
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              Create sub branches first before migrating certificates
+            </p>
+          )}
         </FormField>
 
-        {/* Preview */}
+        {/* Preview - ✅ FIXED: Much better contrast in dark mode */}
         {previewCount > 0 && (
-          <div className="p-4 bg-warning-50 dark:bg-warning-950 border border-warning-200 dark:border-warning-800 rounded-lg">
-            <p className="text-sm text-warning-900 dark:text-warning-100">
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-500/30 rounded-lg">
+            <p className="text-sm text-yellow-900 dark:text-yellow-200">
               <span className="font-semibold">Preview:</span> Will migrate{" "}
-              <span className="font-bold">{previewCount}</span> certificates
+              <span className="font-bold text-yellow-950 dark:text-yellow-400">
+                {previewCount}
+              </span>{" "}
+              certificates
             </p>
-            <p className="text-xs text-warning-700 dark:text-warning-300 mt-1">
+            <p className="text-xs text-yellow-800 dark:text-yellow-300/80 mt-1">
               Range: {formatCertificateRange(startNumber, endNumber)}
             </p>
           </div>
@@ -440,7 +462,12 @@ function MigrateModal({
           cancelText="Cancel"
           confirmText="Migrate Certificates"
           confirmLoading={isMigrating}
-          confirmDisabled={isMigrating || previewCount === 0 || !toBranchId}
+          confirmDisabled={
+            isMigrating ||
+            previewCount === 0 ||
+            !toBranchId ||
+            subBranches.length === 0
+          }
           confirmVariant="primary"
         />
       </form>
@@ -679,13 +706,6 @@ export default function CertificatesPage() {
             leftIcon={<ArrowRightLeft className="w-4 h-4" />}
           >
             Migrate
-          </Button>
-          <Button
-            variant="outline"
-            leftIcon={<Download className="w-4 h-4" />}
-            disabled
-          >
-            Export
           </Button>
         </div>
       </div>
