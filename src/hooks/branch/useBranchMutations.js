@@ -1,27 +1,8 @@
-/**
- * Branch Mutation Hooks
- * React Query hooks untuk branch CRUD operations (SuperAdmin only)
- */
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { branchApi } from "@/api";
 import { getErrorMessage } from "@/utils/api/errorHandler";
 import { toast } from "sonner";
 
-/**
- * Create branch mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: createBranch, isPending } = useCreateBranch();
- *
- * createBranch({
- *   code: 'HQ',
- *   name: 'Head Quarter',
- *   is_head_branch: true,
- *   admin_username: 'admin_hq'
- * });
- */
 export const useCreateBranch = () => {
   const queryClient = useQueryClient();
 
@@ -38,18 +19,6 @@ export const useCreateBranch = () => {
   });
 };
 
-/**
- * Update branch mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: updateBranch } = useUpdateBranch();
- *
- * updateBranch({
- *   id: 1,
- *   data: { name: 'Updated Name' }
- * });
- */
 export const useUpdateBranch = () => {
   const queryClient = useQueryClient();
 
@@ -67,15 +36,6 @@ export const useUpdateBranch = () => {
   });
 };
 
-/**
- * Delete branch mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: deleteBranch } = useDeleteBranch();
- *
- * deleteBranch(5);
- */
 export const useDeleteBranch = () => {
   const queryClient = useQueryClient();
 
@@ -92,15 +52,6 @@ export const useDeleteBranch = () => {
   });
 };
 
-/**
- * Toggle branch active status
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: toggleActive } = useToggleBranchActive();
- *
- * toggleActive(1);
- */
 export const useToggleBranchActive = () => {
   const queryClient = useQueryClient();
 
@@ -120,18 +71,6 @@ export const useToggleBranchActive = () => {
   });
 };
 
-/**
- * Toggle branch head status
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: toggleHead } = useToggleBranchHead();
- *
- * toggleHead({
- *   id: 2,
- *   payload: { is_head_branch: true, admin_username: 'admin_branch2' }
- * });
- */
 export const useToggleBranchHead = () => {
   const queryClient = useQueryClient();
 
@@ -151,19 +90,6 @@ export const useToggleBranchHead = () => {
   });
 };
 
-/**
- * Reset branch admin password
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: resetPassword } = useResetBranchAdminPassword();
- *
- * resetPassword(1, {
- *   onSuccess: (data) => {
- *     console.log('New password:', data.password);
- *   }
- * });
- */
 export const useResetBranchAdminPassword = () => {
   return useMutation({
     mutationFn: branchApi.resetBranchAdminPassword,

@@ -1,24 +1,13 @@
-/**
- * Select Component
- * Dropdown select with dark mode support
- */
-
 import { forwardRef } from "react";
 import { cn } from "@/utils/helpers/cn";
 import { ChevronDown } from "lucide-react";
 
-/**
- * Select sizes
- */
 const selectSizes = {
   sm: "px-3 py-1.5 text-sm",
   md: "px-3 py-2 text-sm",
   lg: "px-4 py-3 text-base",
 };
 
-/**
- * Select component
- */
 export const Select = forwardRef(
   (
     {
@@ -45,7 +34,6 @@ export const Select = forwardRef(
     return (
       <div className={cn(fullWidth && "w-full")}>
         <div className="relative">
-          {/* Select */}
           <select
             ref={ref}
             className={cn(
@@ -64,13 +52,11 @@ export const Select = forwardRef(
             {children}
           </select>
 
-          {/* Chevron Icon */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400 dark:text-neutral-500">
             <ChevronDown className="w-4 h-4" />
           </div>
         </div>
 
-        {/* Helper Text / Error Message */}
         {helperText && (
           <p
             className={cn(

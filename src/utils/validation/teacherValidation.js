@@ -1,13 +1,5 @@
-/**
- * Teacher validation schemas
- */
-
 import { z } from "zod";
 
-/**
- * Username validation
- * Reuse from authValidation pattern
- */
 export const teacherUsernameSchema = z
   .string()
   .min(3, "Username must be at least 3 characters")
@@ -18,18 +10,12 @@ export const teacherUsernameSchema = z
   )
   .trim();
 
-/**
- * Full name validation
- */
 export const teacherFullNameSchema = z
   .string()
   .min(2, "Full name must be at least 2 characters")
   .max(100, "Full name must not exceed 100 characters")
   .trim();
 
-/**
- * Branch IDs validation (1-10 branches)
- */
 export const teacherBranchIdsSchema = z
   .array(z.number().positive("Branch ID must be positive"))
   .min(1, "At least one branch must be selected")
@@ -38,9 +24,6 @@ export const teacherBranchIdsSchema = z
     message: "Duplicate branch IDs are not allowed",
   });
 
-/**
- * Division IDs validation (1-20 divisions)
- */
 export const teacherDivisionIdsSchema = z
   .array(z.number().positive("Division ID must be positive"))
   .min(1, "At least one division must be selected")
@@ -49,9 +32,6 @@ export const teacherDivisionIdsSchema = z
     message: "Duplicate division IDs are not allowed",
   });
 
-/**
- * Create teacher schema
- */
 export const createTeacherSchema = z.object({
   username: teacherUsernameSchema,
   full_name: teacherFullNameSchema,
@@ -59,9 +39,6 @@ export const createTeacherSchema = z.object({
   division_ids: teacherDivisionIdsSchema,
 });
 
-/**
- * Update teacher schema
- */
 export const updateTeacherSchema = z.object({
   username: teacherUsernameSchema.optional(),
   full_name: teacherFullNameSchema.optional(),
@@ -69,19 +46,10 @@ export const updateTeacherSchema = z.object({
   division_ids: teacherDivisionIdsSchema.optional(),
 });
 
-/**
- * Update teacher profile schema (teacher own profile)
- * Teacher can only update their full_name
- */
 export const updateTeacherProfileSchema = z.object({
   full_name: teacherFullNameSchema,
 });
 
-/**
- * Validate teacher username
- * @param {string} username
- * @returns {{ valid: boolean, error?: string }}
- */
 export const validateTeacherUsername = (username) => {
   try {
     teacherUsernameSchema.parse(username);
@@ -94,11 +62,6 @@ export const validateTeacherUsername = (username) => {
   }
 };
 
-/**
- * Validate teacher full name
- * @param {string} fullName
- * @returns {{ valid: boolean, error?: string }}
- */
 export const validateTeacherFullName = (fullName) => {
   try {
     teacherFullNameSchema.parse(fullName);
@@ -111,11 +74,6 @@ export const validateTeacherFullName = (fullName) => {
   }
 };
 
-/**
- * Validate branch IDs
- * @param {number[]} branchIds
- * @returns {{ valid: boolean, error?: string }}
- */
 export const validateBranchIds = (branchIds) => {
   try {
     teacherBranchIdsSchema.parse(branchIds);
@@ -128,11 +86,6 @@ export const validateBranchIds = (branchIds) => {
   }
 };
 
-/**
- * Validate division IDs
- * @param {number[]} divisionIds
- * @returns {{ valid: boolean, error?: string }}
- */
 export const validateDivisionIds = (divisionIds) => {
   try {
     teacherDivisionIdsSchema.parse(divisionIds);
@@ -145,11 +98,6 @@ export const validateDivisionIds = (divisionIds) => {
   }
 };
 
-/**
- * Validate teacher create data
- * @param {Object} data
- * @returns {{ valid: boolean, errors?: Object }}
- */
 export const validateCreateTeacher = (data) => {
   try {
     createTeacherSchema.parse(data);
@@ -167,11 +115,6 @@ export const validateCreateTeacher = (data) => {
   }
 };
 
-/**
- * Validate teacher update data
- * @param {Object} data
- * @returns {{ valid: boolean, errors?: Object }}
- */
 export const validateUpdateTeacher = (data) => {
   try {
     updateTeacherSchema.parse(data);

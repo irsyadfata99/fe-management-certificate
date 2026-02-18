@@ -1,13 +1,5 @@
-/**
- * Card Component
- * Glassmorphism card with variants
- */
-
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * Card variants
- */
 const cardVariants = {
   default:
     "bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-sm",
@@ -17,9 +9,6 @@ const cardVariants = {
     "bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-md hover:shadow-lg transition-shadow",
 };
 
-/**
- * Card component
- */
 export const Card = ({
   children,
   variant = "default",
@@ -42,9 +31,6 @@ export const Card = ({
   );
 };
 
-/**
- * CardHeader - Card header section
- */
 export const CardHeader = ({ children, className }) => {
   return (
     <div
@@ -58,9 +44,6 @@ export const CardHeader = ({ children, className }) => {
   );
 };
 
-/**
- * CardTitle - Card title
- */
 export const CardTitle = ({ children, className }) => {
   return (
     <h3
@@ -74,9 +57,6 @@ export const CardTitle = ({ children, className }) => {
   );
 };
 
-/**
- * CardDescription - Card description
- */
 export const CardDescription = ({ children, className }) => {
   return (
     <p
@@ -90,16 +70,10 @@ export const CardDescription = ({ children, className }) => {
   );
 };
 
-/**
- * CardContent - Card content section
- */
 export const CardContent = ({ children, className }) => {
   return <div className={className}>{children}</div>;
 };
 
-/**
- * CardFooter - Card footer section
- */
 export const CardFooter = ({ children, className }) => {
   return (
     <div

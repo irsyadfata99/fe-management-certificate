@@ -1,20 +1,5 @@
-/**
- * Certificate Query Hooks (Admin)
- *
- * ✅ FIXES:
- *  1. useCertificateBranches — hook yang sebelumnya hilang total
- *  2. useCertificates — Fix response handling untuk pagination
- *  3. Semua select() disesuaikan dengan response shape setelah client.js unwrapping
- *  4. Better error handling dan logging
- */
-
 import { useQuery } from "@tanstack/react-query";
 import { certificateApi } from "@/api";
-
-// =============================================================================
-// useCertificateBranches
-// Hook untuk fetch branches list untuk dropdown (Admin)
-// =============================================================================
 
 export const useCertificateBranches = () => {
   return useQuery({
@@ -25,12 +10,9 @@ export const useCertificateBranches = () => {
 
       let branches = [];
 
-      // Response shape: { success: true, branches: [...] }
       if (data?.branches && Array.isArray(data.branches)) {
         branches = data.branches;
-      }
-      // Fallback: direct array (jika backend berubah)
-      else if (Array.isArray(data)) {
+      } else if (Array.isArray(data)) {
         branches = data;
       }
 
@@ -41,20 +23,9 @@ export const useCertificateBranches = () => {
 
       return branches;
     },
-    staleTime: 5 * 60 * 1000, // 5 menit — branch jarang berubah
+    staleTime: 5 * 60 * 1000,
   });
 };
-
-// =============================================================================
-// ✅ FIX: useCertificates
-// Get certificates with filters, search, and pagination
-//
-// Backend response setelah ResponseHelper.success:
-//   { success: true, message: "...", data: { certificates: [...], pagination: {...} } }
-//
-// Setelah client.js unwrap (.data ada):
-//   { certificates: [...], pagination: {...} }
-// =============================================================================
 
 export const useCertificates = (params = {}) => {
   return useQuery({
@@ -68,12 +39,9 @@ export const useCertificates = (params = {}) => {
       let certificates = [];
       let pagination = { total: 0, page: 1, limit: 20, pages: 1 };
 
-      // ✅ FIX: Handle response shape properly
-      // Shape setelah unwrap: { certificates: [...], pagination: {...} }
       if (data?.certificates && Array.isArray(data.certificates)) {
         certificates = data.certificates;
 
-        // ✅ FIX: Extract pagination properly
         if (data.pagination) {
           pagination = {
             total: data.pagination.total || 0,
@@ -82,13 +50,9 @@ export const useCertificates = (params = {}) => {
             pages: data.pagination.pages || 1,
           };
         }
-      }
-      // Fallback: direct array
-      else if (Array.isArray(data)) {
+      } else if (Array.isArray(data)) {
         certificates = data;
-      }
-      // Fallback: double-wrapped (defensive)
-      else if (data?.data && Array.isArray(data.data)) {
+      } else if (data?.data && Array.isArray(data.data)) {
         certificates = data.data;
         if (data.pagination) {
           pagination = data.pagination;
@@ -105,14 +69,6 @@ export const useCertificates = (params = {}) => {
   });
 };
 
-// =============================================================================
-// useCertificateStock
-//
-// Backend: getStockSummary → ResponseHelper.success wraps ke { success, data: result }
-// Setelah client.js unwrap via .data:
-//   { head_branch: { id, code, name, stock: {...} }, sub_branches: [...] }
-// =============================================================================
-
 export const useCertificateStock = () => {
   return useQuery({
     queryKey: ["certificates", "stock"],
@@ -121,12 +77,6 @@ export const useCertificateStock = () => {
       console.log("[useCertificateStock] Raw data:", data);
 
       let stock = [];
-
-      // ✅ Shape aktual dari getStockSummary (setelah ResponseHelper.success + client.js unwrap):
-      // {
-      //   head_branch: { id, code, name, stock: { in_stock, reserved, printed, migrated, total } },
-      //   sub_branches: [{ branch_id, branch_code, branch_name, stock: {...} }]
-      // }
       if (data?.head_branch || data?.sub_branches) {
         const all = [];
 
@@ -136,7 +86,6 @@ export const useCertificateStock = () => {
             branch_code: data.head_branch.code,
             branch_name: data.head_branch.name,
             is_head_branch: true,
-            // ✅ FIX: Flatten stock object properly
             total: parseInt(data.head_branch.stock?.total || 0, 10),
             in_stock: parseInt(data.head_branch.stock?.in_stock || 0, 10),
             reserved: parseInt(data.head_branch.stock?.reserved || 0, 10),
@@ -152,7 +101,6 @@ export const useCertificateStock = () => {
               branch_code: b.branch_code,
               branch_name: b.branch_name,
               is_head_branch: false,
-              // ✅ FIX: Flatten stock object properly
               total: parseInt(b.stock?.total || 0, 10),
               in_stock: parseInt(b.stock?.in_stock || 0, 10),
               reserved: parseInt(b.stock?.reserved || 0, 10),
@@ -163,9 +111,7 @@ export const useCertificateStock = () => {
         }
 
         stock = all;
-      }
-      // Fallback: flat array (jika backend berubah di masa depan)
-      else if (Array.isArray(data)) {
+      } else if (Array.isArray(data)) {
         stock = data;
       }
 
@@ -180,13 +126,6 @@ export const useCertificateStock = () => {
   });
 };
 
-// =============================================================================
-// useStockAlerts
-//
-// Backend response: { success: true, data: { alerts: [...], summary: {...} } }
-// Setelah client.js unwrap: { alerts: [...], summary: {...} }
-// =============================================================================
-
 export const useStockAlerts = (params = {}) => {
   return useQuery({
     queryKey: ["certificates", "alerts", params],
@@ -196,7 +135,6 @@ export const useStockAlerts = (params = {}) => {
 
       let alerts = [];
 
-      // Shape: { alerts: [...], summary: {...} }
       if (data?.alerts && Array.isArray(data.alerts)) {
         alerts = data.alerts;
       } else if (Array.isArray(data)) {
@@ -210,13 +148,6 @@ export const useStockAlerts = (params = {}) => {
   });
 };
 
-// =============================================================================
-// useCertificateStatistics
-//
-// Backend response: { success: true, data: { ... } }
-// Setelah client.js unwrap: { ... } langsung
-// =============================================================================
-
 export const useCertificateStatistics = (params = {}) => {
   return useQuery({
     queryKey: ["certificates", "statistics", params],
@@ -226,15 +157,12 @@ export const useCertificateStatistics = (params = {}) => {
 
       let statistics = {};
 
-      // Jika sudah di-unwrap via .data → data adalah object statistik langsung
       if (data && typeof data === "object" && !Array.isArray(data)) {
-        // Cek apakah ada field "statistics" atau "stats" (belum di-unwrap penuh)
         if (data.statistics) {
           statistics = data.statistics;
         } else if (data.stats) {
           statistics = data.stats;
         } else {
-          // Sudah unwrapped langsung
           statistics = data;
         }
       }

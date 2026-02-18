@@ -1,23 +1,12 @@
-/**
- * Input Component
- * Text input with dark mode support
- */
-
 import { forwardRef } from "react";
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * Input sizes
- */
 const inputSizes = {
   sm: "px-3 py-1.5 text-sm",
   md: "px-3 py-2 text-sm",
   lg: "px-4 py-3 text-base",
 };
 
-/**
- * Input component
- */
 export const Input = forwardRef(
   (
     {
@@ -44,14 +33,12 @@ export const Input = forwardRef(
     return (
       <div className={cn(fullWidth && "w-full")}>
         <div className="relative">
-          {/* Left Icon */}
           {leftIcon && (
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
               {leftIcon}
             </div>
           )}
 
-          {/* Input */}
           <input
             ref={ref}
             className={cn(
@@ -65,7 +52,6 @@ export const Input = forwardRef(
             {...props}
           />
 
-          {/* Right Icon */}
           {rightIcon && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
               {rightIcon}
@@ -73,7 +59,6 @@ export const Input = forwardRef(
           )}
         </div>
 
-        {/* Helper Text / Error Message */}
         {helperText && (
           <p
             className={cn(

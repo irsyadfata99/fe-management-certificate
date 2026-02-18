@@ -1,11 +1,3 @@
-/**
- * Status constants untuk certificates, reservations, dll
- */
-
-// ============================================================================
-// CERTIFICATE STATUS
-// ============================================================================
-
 export const CERTIFICATE_STATUS = {
   IN_STOCK: "in_stock",
   RESERVED: "reserved",
@@ -13,9 +5,6 @@ export const CERTIFICATE_STATUS = {
   MIGRATED: "migrated",
 };
 
-/**
- * Status labels (bahasa Indonesia)
- */
 export const CERTIFICATE_STATUS_LABELS = {
   [CERTIFICATE_STATUS.IN_STOCK]: "Available",
   [CERTIFICATE_STATUS.RESERVED]: "Reserved",
@@ -23,9 +12,6 @@ export const CERTIFICATE_STATUS_LABELS = {
   [CERTIFICATE_STATUS.MIGRATED]: "Migrated",
 };
 
-/**
- * Status badge variants (Tailwind classes)
- */
 export const CERTIFICATE_STATUS_VARIANTS = {
   [CERTIFICATE_STATUS.IN_STOCK]: "bg-green-100 text-green-800 border-green-200",
   [CERTIFICATE_STATUS.RESERVED]:
@@ -34,18 +20,9 @@ export const CERTIFICATE_STATUS_VARIANTS = {
   [CERTIFICATE_STATUS.MIGRATED]: "bg-gray-100 text-gray-800 border-gray-200",
 };
 
-/**
- * Get certificate status label
- * @param {string} status - Certificate status
- * @returns {string}
- */
 export const getCertificateStatusLabel = (status) => {
   return CERTIFICATE_STATUS_LABELS[status] || status;
 };
-
-// ============================================================================
-// RESERVATION STATUS
-// ============================================================================
 
 export const RESERVATION_STATUS = {
   ACTIVE: "active",
@@ -65,10 +42,6 @@ export const RESERVATION_STATUS_VARIANTS = {
   [RESERVATION_STATUS.COMPLETED]:
     "bg-green-100 text-green-800 border-green-200",
 };
-
-// ============================================================================
-// ACTION TYPES (untuk logs)
-// ============================================================================
 
 export const ACTION_TYPES = {
   BULK_CREATE: "bulk_create",
@@ -94,14 +67,10 @@ export const ACTION_TYPE_VARIANTS = {
   [ACTION_TYPES.RELEASE]: "bg-gray-100 text-gray-800",
 };
 
-// ============================================================================
-// STOCK ALERT SEVERITY
-// ============================================================================
-
 export const STOCK_ALERT_SEVERITY = {
-  CRITICAL: "critical", // Out of stock
-  HIGH: "high", // <= 5
-  MEDIUM: "medium", // <= threshold (default 10)
+  CRITICAL: "critical",
+  HIGH: "high",
+  MEDIUM: "medium",
 };
 
 export const STOCK_ALERT_SEVERITY_LABELS = {

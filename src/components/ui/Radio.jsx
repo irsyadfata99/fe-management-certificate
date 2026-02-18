@@ -1,14 +1,6 @@
-/**
- * Radio Component
- * Radio button with label and dark mode support
- */
-
 import { forwardRef } from "react";
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * Radio component
- */
 export const Radio = forwardRef(
   ({ label, description, error = false, className, ...props }, ref) => {
     const radioStyles =

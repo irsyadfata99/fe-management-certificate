@@ -1,20 +1,8 @@
-/**
- * Teacher Certificate Hooks
- * React Query hooks untuk certificate operations (Teacher role)
- */
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { certificateTeacherApi } from "@/api";
 import { getErrorMessage } from "@/utils/api/errorHandler";
 import { toast } from "sonner";
 
-/**
- * Check certificate availability
- * @returns {Object} Query object
- *
- * @example
- * const { data, isLoading } = useCertificateAvailability();
- */
 export const useCertificateAvailability = () => {
   return useQuery({
     queryKey: ["certificates", "availability"],
@@ -23,13 +11,6 @@ export const useCertificateAvailability = () => {
   });
 };
 
-/**
- * Get teacher's active reservations
- * @returns {Object} Query object
- *
- * @example
- * const { data: reservations } = useMyReservations();
- */
 export const useMyReservations = () => {
   return useQuery({
     queryKey: ["certificates", "my-reservations"],
@@ -39,17 +20,6 @@ export const useMyReservations = () => {
   });
 };
 
-/**
- * Get teacher's print history
- * @param {Object} [params] - Query parameters
- * @returns {Object} Query object
- *
- * @example
- * const { data: prints } = useMyPrints({
- *   startDate: '2024-01-01',
- *   page: 1
- * });
- */
 export const useMyPrints = (params = {}) => {
   return useQuery({
     queryKey: ["certificates", "my-prints", params],
@@ -58,15 +28,6 @@ export const useMyPrints = (params = {}) => {
   });
 };
 
-/**
- * Reserve certificate mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: reserve, isPending } = useReserveCertificate();
- *
- * reserve({ branchId: 1 });
- */
 export const useReserveCertificate = () => {
   const queryClient = useQueryClient();
 
@@ -88,20 +49,6 @@ export const useReserveCertificate = () => {
   });
 };
 
-/**
- * Print certificate mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: print, isPending } = usePrintCertificate();
- *
- * print({
- *   certificateId: 123,
- *   studentName: 'John Doe',
- *   moduleId: 5,
- *   ptcDate: '2024-02-14'
- * });
- */
 export const usePrintCertificate = () => {
   const queryClient = useQueryClient();
 
@@ -123,15 +70,6 @@ export const usePrintCertificate = () => {
   });
 };
 
-/**
- * Release certificate mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: release } = useReleaseCertificate();
- *
- * release(123);
- */
 export const useReleaseCertificate = () => {
   const queryClient = useQueryClient();
 

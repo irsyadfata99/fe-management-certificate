@@ -1,8 +1,3 @@
-/**
- * Certificate Logs Hooks
- * React Query hooks untuk certificate logs dan export
- */
-
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { certificateLogApi } from "@/api";
 import { getErrorMessage } from "@/utils/api/errorHandler";
@@ -12,18 +7,6 @@ import api from "@/api/client";
 import { API_ENDPOINTS } from "@/utils/constants/endpoints";
 import { buildQueryString } from "@/utils/api/queryBuilder";
 
-/**
- * Get certificate logs
- * @param {Object} [params] - Query parameters
- * @returns {Object} Query object
- *
- * @example
- * const { data, isLoading } = useCertificateLogs({
- *   actionType: 'print',
- *   startDate: '2024-01-01',
- *   page: 1
- * });
- */
 export const useCertificateLogs = (params = {}) => {
   return useQuery({
     queryKey: ["certificates", "logs", params],
@@ -32,17 +15,6 @@ export const useCertificateLogs = (params = {}) => {
   });
 };
 
-/**
- * ✅ NEW: Get certificate migrations
- * @param {Object} [params] - Query parameters
- * @returns {Object} Query object
- *
- * @example
- * const { data: migrations } = useCertificateMigrations({
- *   fromBranchId: 1,
- *   toBranchId: 2
- * });
- */
 export const useCertificateMigrations = (params = {}) => {
   return useQuery({
     queryKey: ["certificates", "migrations", params],
@@ -51,18 +23,6 @@ export const useCertificateMigrations = (params = {}) => {
   });
 };
 
-/**
- * Export certificate logs mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: exportLogs, isPending } = useExportCertificateLogs();
- *
- * exportLogs({
- *   actionType: 'print',
- *   startDate: '2024-01-01'
- * });
- */
 export const useExportCertificateLogs = () => {
   return useMutation({
     mutationFn: async (params) => {

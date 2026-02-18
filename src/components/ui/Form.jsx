@@ -1,20 +1,9 @@
-/**
- * Form Field Components
- * Wrapper components for consistent form layouts
- */
-
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * FormField - Wrapper for form inputs
- */
 export const FormField = ({ children, className }) => {
   return <div className={cn("space-y-1", className)}>{children}</div>;
 };
 
-/**
- * FormLabel - Label for form inputs
- */
 export const FormLabel = ({ children, required, htmlFor, className }) => {
   return (
     <label
@@ -30,9 +19,6 @@ export const FormLabel = ({ children, required, htmlFor, className }) => {
   );
 };
 
-/**
- * FormError - Error message for form inputs
- */
 export const FormError = ({ children, className }) => {
   if (!children) return null;
 
@@ -45,9 +31,6 @@ export const FormError = ({ children, className }) => {
   );
 };
 
-/**
- * FormHelperText - Helper text for form inputs
- */
 export const FormHelperText = ({ children, className }) => {
   if (!children) return null;
 

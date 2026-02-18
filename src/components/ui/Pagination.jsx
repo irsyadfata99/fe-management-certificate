@@ -1,14 +1,6 @@
-/**
- * Pagination Component
- * Page navigation with dark mode support
- */
-
 import { cn } from "@/utils/helpers/cn";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-/**
- * Pagination component
- */
 export const Pagination = ({
   currentPage = 1,
   totalPages = 1,
@@ -21,35 +13,29 @@ export const Pagination = ({
   const canGoPrevious = currentPage > 1;
   const canGoNext = currentPage < totalPages;
 
-  // Calculate page numbers to show
   const getPageNumbers = () => {
     const pages = [];
-    const maxVisible = 5; // Show max 5 page numbers
+    const maxVisible = 5;
 
     if (totalPages <= maxVisible) {
-      // Show all pages
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Show current page +/- 2
       let start = Math.max(1, currentPage - 2);
       let end = Math.min(totalPages, currentPage + 2);
 
-      // Adjust if at the beginning or end
       if (currentPage <= 3) {
         end = maxVisible;
       } else if (currentPage >= totalPages - 2) {
         start = totalPages - maxVisible + 1;
       }
 
-      // Add first page
       if (start > 1) {
         pages.push(1);
         if (start > 2) pages.push("...");
       }
 
-      // Add page numbers
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
@@ -66,7 +52,6 @@ export const Pagination = ({
 
   const pageNumbers = getPageNumbers();
 
-  // Calculate info text
   const getInfoText = () => {
     if (!totalItems || !itemsPerPage) return null;
 
@@ -83,16 +68,13 @@ export const Pagination = ({
         className,
       )}
     >
-      {/* Info Text */}
       {showInfo && totalItems && (
         <div className="text-sm text-neutral-600 dark:text-neutral-400">
           {getInfoText()}
         </div>
       )}
 
-      {/* Page Numbers */}
       <div className="flex items-center gap-1">
-        {/* Previous Button */}
         <button
           onClick={() => canGoPrevious && onPageChange(currentPage - 1)}
           disabled={!canGoPrevious}
@@ -106,7 +88,6 @@ export const Pagination = ({
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        {/* Page Numbers */}
         {pageNumbers.map((page, index) => {
           if (page === "...") {
             return (
@@ -137,7 +118,6 @@ export const Pagination = ({
           );
         })}
 
-        {/* Next Button */}
         <button
           onClick={() => canGoNext && onPageChange(currentPage + 1)}
           disabled={!canGoNext}

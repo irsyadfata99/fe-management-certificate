@@ -1,14 +1,6 @@
-/**
- * Checkbox Component
- * Checkbox input with label and dark mode support
- */
-
 import { forwardRef } from "react";
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * Checkbox component
- */
 export const Checkbox = forwardRef(
   (
     { label, description, error = false, helperText, className, ...props },
@@ -49,7 +41,6 @@ export const Checkbox = forwardRef(
           )}
         </label>
 
-        {/* Helper Text / Error Message */}
         {helperText && (
           <p
             className={cn(

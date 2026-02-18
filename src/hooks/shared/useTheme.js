@@ -1,18 +1,9 @@
-/**
- * useTheme Hook
- * Manages dark mode state and persistence
- */
-
 import { useEffect, useCallback } from "react";
 import { useUIStore } from "@/store/uiStore";
 
-/**
- * Theme values: 'light' | 'dark' | 'system'
- */
 export const useTheme = () => {
   const { theme, setTheme } = useUIStore();
 
-  // Get effective theme (resolves 'system' to 'light' or 'dark')
   const getEffectiveTheme = useCallback(() => {
     if (theme === "system") {
       return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -22,7 +13,6 @@ export const useTheme = () => {
     return theme;
   }, [theme]);
 
-  // Apply theme to HTML element
   const applyTheme = useCallback((effectiveTheme) => {
     const root = document.documentElement;
 
@@ -33,22 +23,18 @@ export const useTheme = () => {
     }
   }, []);
 
-  // Initialize theme on mount
   useEffect(() => {
     const effectiveTheme = getEffectiveTheme();
     applyTheme(effectiveTheme);
   }, [getEffectiveTheme, applyTheme]);
 
-  // Watch for theme changes
   useEffect(() => {
     const effectiveTheme = getEffectiveTheme();
     applyTheme(effectiveTheme);
 
-    // Save to localStorage
     localStorage.setItem("theme", theme);
   }, [theme, getEffectiveTheme, applyTheme]);
 
-  // Watch for system theme changes (when theme is 'system')
   useEffect(() => {
     if (theme !== "system") return;
 
@@ -65,16 +51,15 @@ export const useTheme = () => {
     };
   }, [theme, applyTheme]);
 
-  // Toggle between light and dark (skips 'system')
   const toggleTheme = useCallback(() => {
     const effectiveTheme = getEffectiveTheme();
     setTheme(effectiveTheme === "dark" ? "light" : "dark");
   }, [getEffectiveTheme, setTheme]);
 
   return {
-    theme, // Current theme setting ('light' | 'dark' | 'system')
-    effectiveTheme: getEffectiveTheme(), // Actual applied theme ('light' | 'dark')
-    setTheme, // Set theme explicitly
-    toggleTheme, // Toggle between light/dark
+    theme,
+    effectiveTheme: getEffectiveTheme(),
+    setTheme,
+    toggleTheme,
   };
 };

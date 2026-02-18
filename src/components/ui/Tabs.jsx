@@ -1,20 +1,9 @@
-/**
- * Tabs Component
- * Tab navigation with dark mode support
- */
-
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * Tabs Container
- */
 export const Tabs = ({ children, className }) => {
   return <div className={cn("w-full", className)}>{children}</div>;
 };
 
-/**
- * TabsList - Tab buttons container
- */
 export const TabsList = ({ children, className }) => {
   return (
     <div
@@ -28,9 +17,6 @@ export const TabsList = ({ children, className }) => {
   );
 };
 
-/**
- * TabsTrigger - Individual tab button
- */
 export const TabsTrigger = ({
   children,
   active = false,
@@ -57,9 +43,6 @@ export const TabsTrigger = ({
   );
 };
 
-/**
- * TabsContent - Tab panel content
- */
 export const TabsContent = ({ children, active = false, className }) => {
   if (!active) return null;
 

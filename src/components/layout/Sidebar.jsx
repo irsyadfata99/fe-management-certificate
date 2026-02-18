@@ -1,12 +1,3 @@
-/**
- * Sidebar Component
- * Retractable sidebar dengan role-based navigation
- * FIXED:
- * - Smooth collapse animation
- * - Only child item highlighted when active (not parent)
- * - Better collapsible sub-menu behavior
- */
-
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
@@ -15,13 +6,9 @@ import { useUIStore } from "@/store/uiStore";
 import { getMenuItems, BOTTOM_MENU_ITEMS } from "./sidebarConfig";
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * NavItem — handles both regular items dan grouped items dengan children
- */
 function NavItem({ item, sidebarCollapsed }) {
   const location = useLocation();
 
-  // Cek apakah salah satu child sedang aktif (untuk auto-expand)
   const isChildActive = item.children?.some((child) =>
     location.pathname.startsWith(child.path),
   );
@@ -34,14 +21,12 @@ function NavItem({ item, sidebarCollapsed }) {
   if (item.children) {
     return (
       <div>
-        {/* Parent button - ✅ FIX: Tidak highlight ketika child aktif */}
         <button
           onClick={() => !sidebarCollapsed && setIsOpen((prev) => !prev)}
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative",
             "text-slate-700 dark:text-slate-300",
             "hover:bg-slate-100 dark:hover:bg-slate-800",
-            // ✅ FIX: Remove active state dari parent ketika child aktif
             sidebarCollapsed && "justify-center",
           )}
           aria-expanded={isOpen}
@@ -61,7 +46,6 @@ function NavItem({ item, sidebarCollapsed }) {
             </>
           )}
 
-          {/* Tooltip untuk collapsed state */}
           {sidebarCollapsed && (
             <div className="absolute left-full ml-2 px-3 py-2 bg-slate-900 dark:bg-slate-700 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 shadow-lg">
               {item.label}
@@ -74,7 +58,6 @@ function NavItem({ item, sidebarCollapsed }) {
           )}
         </button>
 
-        {/* Sub-menu items - ✅ FIX: Smooth animation */}
         {!sidebarCollapsed && (
           <div
             className={cn(
@@ -95,7 +78,6 @@ function NavItem({ item, sidebarCollapsed }) {
                       "flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-200",
                       "text-slate-600 dark:text-slate-400 text-sm",
                       "hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200",
-                      // ✅ FIX: Hanya child yang aktif yang ter-highlight
                       isActive &&
                         "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-medium shadow-sm",
                     )}
@@ -109,7 +91,6 @@ function NavItem({ item, sidebarCollapsed }) {
           </div>
         )}
 
-        {/* Collapsed state: tampilkan children sebagai tooltip list */}
         {sidebarCollapsed && (
           <div className="absolute left-full ml-2 top-0 hidden group-hover:block z-50">
             <div className="bg-slate-900 dark:bg-slate-700 text-white text-sm rounded-lg shadow-lg overflow-hidden min-w-40">
@@ -161,7 +142,6 @@ function NavItem({ item, sidebarCollapsed }) {
 
       {!sidebarCollapsed && <span className="text-sm">{item.label}</span>}
 
-      {/* Tooltip untuk collapsed state */}
       {sidebarCollapsed && (
         <div className="absolute left-full ml-2 px-3 py-2 bg-slate-900 dark:bg-slate-700 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 shadow-lg">
           {item.label}
@@ -173,7 +153,6 @@ function NavItem({ item, sidebarCollapsed }) {
         </div>
       )}
 
-      {/* Badge */}
       {!sidebarCollapsed && item.badge && (
         <span className="ml-auto px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full">
           5
@@ -191,7 +170,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar */}
       <aside
         className={cn(
           "fixed left-0 top-0 z-40 h-screen transition-all duration-300 ease-in-out",
@@ -200,7 +178,6 @@ export function Sidebar() {
           sidebarCollapsed ? "w-20" : "w-64",
         )}
       >
-        {/* Logo & Brand */}
         <div
           className={cn(
             "flex items-center h-16 px-4 border-b border-slate-200 dark:border-slate-800",
@@ -223,7 +200,6 @@ export function Sidebar() {
             )}
           </div>
 
-          {/* Toggle Button */}
           <button
             onClick={toggleSidebar}
             className={cn(
@@ -243,7 +219,6 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1">
           {menuItems.map((item, index) => (
             <NavItem
@@ -254,7 +229,6 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {/* Bottom Menu */}
         <div className="border-t border-slate-200 dark:border-slate-800 p-3 space-y-1">
           {BOTTOM_MENU_ITEMS.map((item) => (
             <NavItem
@@ -265,7 +239,6 @@ export function Sidebar() {
           ))}
         </div>
 
-        {/* User Info (collapsed state) */}
         {sidebarCollapsed && (
           <div className="border-t border-slate-200 dark:border-slate-800 p-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm mx-auto shadow-md ring-2 ring-slate-200 dark:ring-slate-700">
@@ -274,7 +247,6 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* User Info (expanded state) */}
         {!sidebarCollapsed && (
           <div className="border-t border-slate-200 dark:border-slate-800 p-4">
             <div className="flex items-center gap-3">
@@ -294,12 +266,10 @@ export function Sidebar() {
         )}
       </aside>
 
-      {/* Mobile Sidebar Backdrop */}
       <div
         className={cn(
           "fixed inset-0 bg-black/50 z-30 lg:hidden transition-opacity duration-300",
           "opacity-0 invisible",
-          // TODO: Add mobile sidebar state management
         )}
       />
     </>

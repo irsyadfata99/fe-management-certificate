@@ -1,9 +1,3 @@
-/**
- * Navbar Component
- * Top navigation dengan user menu, dark mode toggle, dan mobile menu
- * FIXED: Avatar gradient visibility and text contrast
- */
-
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Moon, Sun, User, Settings, LogOut, Menu, X } from "lucide-react";
@@ -28,7 +22,6 @@ export function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
 
-  // Close user menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -43,7 +36,6 @@ export function Navbar() {
     }
   }, [userMenuOpen]);
 
-  // Get page title from route
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === "/dashboard") return "Dashboard";
@@ -80,9 +72,7 @@ export function Navbar() {
       )}
     >
       <div className="h-full px-4 lg:px-6 flex items-center justify-between gap-4">
-        {/* Left Section - Mobile Menu + Page Title */}
         <div className="flex items-center gap-4">
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
             className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -95,15 +85,12 @@ export function Navbar() {
             )}
           </button>
 
-          {/* Page Title */}
           <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
             {getPageTitle()}
           </h1>
         </div>
 
-        {/* Right Section - Actions */}
         <div className="flex items-center gap-2">
-          {/* Dark Mode Toggle */}
           <button
             onClick={toggleTheme}
             className="p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
@@ -118,19 +105,14 @@ export function Navbar() {
             )}
           </button>
 
-          {/* User Menu */}
           <div className="relative" ref={userMenuRef}>
-            {/* User Button */}
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
             >
-              {/* FIXED: Better gradient visibility with shadow and ring */}
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-md ring-2 ring-slate-200 dark:ring-slate-700">
                 {user?.full_name?.[0] || user?.username?.[0] || "U"}
               </div>
-
-              {/* User Info (Hidden on mobile) */}
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-slate-900 dark:text-white">
                   {user?.full_name || user?.username || "User"}
@@ -141,7 +123,6 @@ export function Navbar() {
               </div>
             </button>
 
-            {/* Dropdown Menu */}
             <div
               className={cn(
                 "absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 transition-all duration-200 origin-top-right",
@@ -150,7 +131,6 @@ export function Navbar() {
                   : "opacity-0 invisible scale-95 pointer-events-none",
               )}
             >
-              {/* User Info Header (visible on mobile in dropdown) */}
               <div className="sm:hidden px-4 py-3 border-b border-slate-200 dark:border-slate-700">
                 <p className="text-sm font-medium text-slate-900 dark:text-white">
                   {user?.full_name || user?.username || "User"}
@@ -160,9 +140,7 @@ export function Navbar() {
                 </p>
               </div>
 
-              {/* Menu Items */}
               <div className="py-1">
-                {/* Profile */}
                 <button
                   onClick={() => {
                     navigate("/profile");
@@ -174,8 +152,6 @@ export function Navbar() {
                   <span>Profile</span>
                 </button>
               </div>
-
-              {/* Logout */}
               <div className="border-t border-slate-200 dark:border-slate-700 py-1">
                 <button
                   onClick={handleLogout}
@@ -193,5 +169,4 @@ export function Navbar() {
   );
 }
 
-// Export both default and named
 export default Navbar;

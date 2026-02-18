@@ -1,8 +1,3 @@
-/**
- * Backup Hooks
- * React Query hooks untuk database backup operations (Admin - Head Branch only)
- */
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { backupApi } from "@/api";
 import { getErrorMessage } from "@/utils/api/errorHandler";
@@ -11,13 +6,6 @@ import { toast } from "sonner";
 import api from "@/api/client";
 import { API_ENDPOINTS } from "@/utils/constants/endpoints";
 
-/**
- * Get list of backups
- * @returns {Object} Query object
- *
- * @example
- * const { data: backups, isLoading } = useBackups();
- */
 export const useBackups = () => {
   return useQuery({
     queryKey: ["backups"],
@@ -26,15 +14,6 @@ export const useBackups = () => {
   });
 };
 
-/**
- * Create backup mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: createBackup, isPending } = useCreateBackup();
- *
- * createBackup({ description: 'Before major update' });
- */
 export const useCreateBackup = () => {
   const queryClient = useQueryClient();
 
@@ -51,15 +30,6 @@ export const useCreateBackup = () => {
   });
 };
 
-/**
- * Delete backup mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: deleteBackup } = useDeleteBackup();
- *
- * deleteBackup(5);
- */
 export const useDeleteBackup = () => {
   const queryClient = useQueryClient();
 
@@ -76,26 +46,12 @@ export const useDeleteBackup = () => {
   });
 };
 
-/**
- * Restore backup mutation
- * ⚠️ DESTRUCTIVE OPERATION
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: restoreBackup, isPending } = useRestoreBackup();
- *
- * restoreBackup({
- *   backupId: 5,
- *   confirmPassword: 'admin-password'
- * });
- */
 export const useRestoreBackup = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: backupApi.restoreBackup,
     onSuccess: () => {
-      // Clear all cache after restore
       queryClient.clear();
       toast.success("Database restored successfully");
     },
@@ -106,15 +62,6 @@ export const useRestoreBackup = () => {
   });
 };
 
-/**
- * Download backup mutation
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: downloadBackup, isPending } = useDownloadBackup();
- *
- * downloadBackup(5);
- */
 export const useDownloadBackup = () => {
   return useMutation({
     mutationFn: async (id) => {

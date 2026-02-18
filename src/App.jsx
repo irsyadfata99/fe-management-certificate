@@ -1,8 +1,3 @@
-/**
- * App Component
- * Root component dengan providers
- */
-
 import { RouterProvider } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -14,10 +9,8 @@ import { router } from "@/router";
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Router */}
       <RouterProvider router={router} />
 
-      {/* Toast Notifications */}
       <Toaster
         position="top-right"
         richColors
@@ -33,7 +26,6 @@ function App() {
         }}
       />
 
-      {/* React Query Devtools (hanya di development) */}
       {import.meta.env.DEV && (
         <ReactQueryDevtools
           initialIsOpen={false}

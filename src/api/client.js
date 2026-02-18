@@ -1,12 +1,3 @@
-/**
- * API Client - Axios Instance
- * FIXED:
- *  1. Response envelope unwrapping now handles { success, branches }, { success, stock },
- *     { success, data } — semua bentuk response backend
- *  2. Debug log auth tidak lagi misleading (cek .token bukan .accessToken)
- *  3. Tidak ada perubahan logic auth / refresh token
- */
-
 import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
 import { API_ENDPOINTS } from "@/utils/constants/endpoints";
@@ -34,10 +25,6 @@ const processQueue = (error, token = null) => {
   });
   failedQueue = [];
 };
-
-// =============================================================================
-// REQUEST INTERCEPTOR
-// =============================================================================
 
 client.interceptors.request.use(
   (config) => {
@@ -67,29 +54,10 @@ client.interceptors.request.use(
   },
 );
 
-// =============================================================================
-// RESPONSE INTERCEPTOR
-// FIX: Unwrap semua bentuk envelope backend secara konsisten.
-//
-// Backend mengembalikan berbagai bentuk:
-//   A) { success: true, data: { ... } }           → unwrap ke .data
-//   B) { success: true, branches: [...] }          → biarkan utuh (tidak ada .data)
-//   C) { success: true, stock: [...] }             → biarkan utuh (tidak ada .data)
-//   D) { success: true, certificates: [...], pagination: {...} } → biarkan utuh
-//
-// Sebelumnya kondisi unwrap mensyaratkan KEDUA "success" DAN "data" ada.
-// Untuk bentuk B/C/D kondisi ini false → data tidak di-unwrap → hook menerima
-// { success: true, branches/stock/... } mentah tapi select() tidak expect itu.
-//
-// Solusi: SELALU unwrap "success" wrapper. Jika ada field "data", unwrap ke .data.
-// Jika tidak ada "data", kembalikan semua field selain "success" & "message".
-// =============================================================================
-
 client.interceptors.response.use(
   (response) => {
     const rawData = response.data;
 
-    // Hanya proses jika response adalah object dengan field "success"
     if (
       rawData &&
       typeof rawData === "object" &&
@@ -103,37 +71,26 @@ client.interceptors.response.use(
         topLevelKeys: Object.keys(rawData),
       });
 
-      // --- Bentuk A: ada field "data" → unwrap ke .data ---
       if ("data" in rawData) {
         console.log("[RESPONSE INTERCEPTOR] Unwrapping via .data");
         response.data = rawData.data;
 
-        // FIX: debug log pakai .token, bukan .accessToken
-        // (authStore menyimpan dengan field name "token")
         if (rawData.data && typeof rawData.data === "object") {
           console.log("[RESPONSE INTERCEPTOR] Unwrapped data keys:", {
             keys: Object.keys(rawData.data),
             hasUser: !!rawData.data.user,
-            hasToken: !!rawData.data.token, // ← FIX: was .accessToken
+            hasToken: !!rawData.data.token,
             hasRefreshToken: !!rawData.data.refreshToken,
           });
         }
 
         return response;
       }
-
-      // --- Bentuk B/C/D: tidak ada "data", payload ada di field lain ---
-      // Kembalikan semua field kecuali "success" dan "message"
-      // sehingga hooks menerima langsung { branches: [...] } dll.
       console.log(
         "[RESPONSE INTERCEPTOR] No .data field — returning payload as-is",
       );
-      // Tidak perlu modifikasi, biarkan response.data = rawData
-      // Hooks sudah handle struktur ini di select()
       return response;
     }
-
-    // Response bukan envelope (array, string, blob, dll) → langsung return
     return response;
   },
 
@@ -155,8 +112,6 @@ client.interceptors.response.use(
     const isSkipEndpoint = skipRefreshEndpoints.some((endpoint) =>
       originalRequest.url?.includes(endpoint),
     );
-
-    // Handle 401 - Token expired
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
@@ -200,7 +155,6 @@ client.interceptors.response.use(
           { refreshToken },
         );
 
-        // FIX: handle both field names dari backend
         const newToken =
           response.data?.accessToken ||
           response.data?.token ||

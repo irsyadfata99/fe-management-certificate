@@ -1,13 +1,4 @@
-/**
- * API Endpoints
- * Semua endpoint backend - sync dengan src/routes di backend
- * Format: relative path tanpa base URL
- */
-
 export const API_ENDPOINTS = {
-  // ============================================================================
-  // AUTH
-  // ============================================================================
   AUTH: {
     LOGIN: "/auth/login",
     LOGOUT: "/auth/logout",
@@ -16,10 +7,6 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: "/auth/change-password",
     CHANGE_USERNAME: "/auth/change-username",
   },
-
-  // ============================================================================
-  // BRANCHES (SuperAdmin only)
-  // ============================================================================
   BRANCHES: {
     GET_ALL: "/branches",
     GET_HEADS: "/branches/heads",
@@ -31,10 +18,6 @@ export const API_ENDPOINTS = {
     TOGGLE_HEAD: (id) => `/branches/${id}/toggle-head`,
     RESET_ADMIN_PASSWORD: (id) => `/branches/${id}/reset-admin-password`,
   },
-
-  // ============================================================================
-  // DIVISIONS (Admin)
-  // ============================================================================
   DIVISIONS: {
     GET_ALL: "/divisions",
     GET_BY_ID: (id) => `/divisions/${id}`,
@@ -44,13 +27,10 @@ export const API_ENDPOINTS = {
     DELETE: (id) => `/divisions/${id}`,
     CREATE_SUB: (divisionId) => `/divisions/${divisionId}/sub-divisions`,
     UPDATE_SUB: (subId) => `/divisions/sub-divisions/${subId}`,
-    TOGGLE_SUB_ACTIVE: (subId) => `/divisions/sub-divisions/${subId}/toggle-active`,
+    TOGGLE_SUB_ACTIVE: (subId) =>
+      `/divisions/sub-divisions/${subId}/toggle-active`,
     DELETE_SUB: (subId) => `/divisions/sub-divisions/${subId}`,
   },
-
-  // ============================================================================
-  // MODULES (Admin)
-  // ============================================================================
   MODULES: {
     GET_ALL: "/modules",
     GET_BY_ID: (id) => `/modules/${id}`,
@@ -59,10 +39,6 @@ export const API_ENDPOINTS = {
     TOGGLE_ACTIVE: (id) => `/modules/${id}/toggle-active`,
     DELETE: (id) => `/modules/${id}`,
   },
-
-  // ============================================================================
-  // TEACHERS (Admin)
-  // ============================================================================
   TEACHERS: {
     GET_ALL: "/teachers",
     GET_BY_ID: (id) => `/teachers/${id}`,
@@ -70,11 +46,6 @@ export const API_ENDPOINTS = {
     UPDATE: (id) => `/teachers/${id}`,
     RESET_PASSWORD: (id) => `/teachers/${id}/reset-password`,
     TOGGLE_ACTIVE: (id) => `/teachers/${id}/toggle-active`,
-    /**
-     * POST /teachers/:id/migrate
-     * Body: { target_branch_id }
-     * Pindah primary branch teacher dalam 1 head branch
-     */
     MIGRATE: (id) => `/teachers/${id}/migrate`,
 
     PROFILE: {
@@ -85,10 +56,6 @@ export const API_ENDPOINTS = {
       GET_MODULES: "/teachers/profile/modules",
     },
   },
-
-  // ============================================================================
-  // CERTIFICATES - ADMIN
-  // ============================================================================
   CERTIFICATES: {
     GET_BRANCHES: "/certificates/branches",
     BULK_CREATE: "/certificates/bulk-create",
@@ -101,10 +68,6 @@ export const API_ENDPOINTS = {
     GET_LOGS: "/certificates/logs",
     EXPORT_LOGS: "/certificates/logs/export",
   },
-
-  // ============================================================================
-  // CERTIFICATES - TEACHER
-  // ============================================================================
   CERTIFICATES_TEACHER: {
     GET_AVAILABLE: "/certificates/available",
     RESERVE: "/certificates/reserve",
@@ -113,20 +76,12 @@ export const API_ENDPOINTS = {
     GET_MY_RESERVATIONS: "/certificates/my-reservations",
     GET_MY_PRINTS: "/certificates/my-prints",
   },
-
-  // ============================================================================
-  // CERTIFICATE PDF
-  // ============================================================================
   CERTIFICATE_PDF: {
     UPLOAD: (printId) => `/certificates/prints/${printId}/pdf`,
     DOWNLOAD: (printId) => `/certificates/prints/${printId}/pdf`,
     DELETE: (printId) => `/certificates/prints/${printId}/pdf`,
     LIST: "/certificates/prints/pdfs",
   },
-
-  // ============================================================================
-  // STUDENTS
-  // ============================================================================
   STUDENTS: {
     SEARCH: "/students/search",
     GET_ALL: "/students",
@@ -135,17 +90,8 @@ export const API_ENDPOINTS = {
     GET_STATISTICS: "/students/statistics",
     UPDATE: (id) => `/students/${id}`,
     TOGGLE_ACTIVE: (id) => `/students/${id}/toggle-active`,
-    /**
-     * POST /students/:id/migrate
-     * Body: { target_branch_id }
-     * Pindah student ke sub-branch lain dalam 1 head branch
-     */
     MIGRATE: (id) => `/students/${id}/migrate`,
   },
-
-  // ============================================================================
-  // BACKUP (Admin - Head Branch only)
-  // ============================================================================
   BACKUP: {
     CREATE: "/backup/create",
     LIST: "/backup/list",
@@ -153,9 +99,5 @@ export const API_ENDPOINTS = {
     DELETE: (id) => `/backup/${id}`,
     DOWNLOAD: (id) => `/backup/download/${id}`,
   },
-
-  // ============================================================================
-  // HEALTH CHECK
-  // ============================================================================
   HEALTH: "/health",
 };

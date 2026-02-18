@@ -1,20 +1,6 @@
-/**
- * Button Component
- * Consistent button with variants and sizes
- * Single solid color (primary blue), no gradients
- */
-
 import { forwardRef } from "react";
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * Button variants:
- * - primary: Solid primary blue background
- * - secondary: Gray background
- * - outline: Transparent with border
- * - ghost: Transparent, no border
- * - danger: Red for destructive actions
- */
 const buttonVariants = {
   primary:
     "bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 shadow-sm hover:shadow-md dark:bg-primary-600 dark:hover:bg-primary-700",
@@ -28,9 +14,6 @@ const buttonVariants = {
     "bg-danger-500 text-white hover:bg-danger-600 active:bg-danger-700 shadow-sm hover:shadow-md",
 };
 
-/**
- * Button sizes
- */
 const buttonSizes = {
   sm: "px-3 py-1.5 text-sm",
   md: "px-4 py-2 text-sm",
@@ -38,9 +21,6 @@ const buttonSizes = {
   xl: "px-8 py-4 text-lg",
 };
 
-/**
- * Button component
- */
 export const Button = forwardRef(
   (
     {
@@ -75,7 +55,6 @@ export const Button = forwardRef(
         )}
         {...props}
       >
-        {/* Loading Spinner */}
         {loading && (
           <svg
             className="animate-spin h-4 w-4"
@@ -99,15 +78,12 @@ export const Button = forwardRef(
           </svg>
         )}
 
-        {/* Left Icon */}
         {!loading && leftIcon && (
           <span className="flex-shrink-0">{leftIcon}</span>
         )}
 
-        {/* Children */}
         <span>{children}</span>
 
-        {/* Right Icon */}
         {!loading && rightIcon && (
           <span className="flex-shrink-0">{rightIcon}</span>
         )}

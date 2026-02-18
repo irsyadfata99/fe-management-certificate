@@ -1,14 +1,6 @@
-/**
- * Certificate validation schemas
- */
-
 import { z } from "zod";
 import { validateCertificateRange } from "@/utils/format/certificateFormat";
 
-/**
- * Certificate number schema
- * Must be positive integer
- */
 export const certificateNumberSchema = z
   .number()
   .int("Certificate number must be an integer")
@@ -16,9 +8,6 @@ export const certificateNumberSchema = z
   .min(1, "Minimum certificate number is 1")
   .max(999999, "Maximum certificate number is 999999");
 
-/**
- * Bulk create schema
- */
 export const bulkCreateCertificatesSchema = z
   .object({
     startNumber: certificateNumberSchema,
@@ -46,9 +35,6 @@ export const bulkCreateCertificatesSchema = z
     },
   );
 
-/**
- * Migrate certificates schema
- */
 export const migrateCertificatesSchema = z
   .object({
     startNumber: certificateNumberSchema,
@@ -60,7 +46,7 @@ export const migrateCertificatesSchema = z
       const validation = validateCertificateRange(
         data.startNumber,
         data.endNumber,
-        1000, // Max 1000 per migration
+        1000,
       );
       return validation.valid;
     },
@@ -77,9 +63,6 @@ export const migrateCertificatesSchema = z
     },
   );
 
-/**
- * Print certificate schema
- */
 export const printCertificateSchema = z.object({
   certificateId: z.number().positive("Certificate selection is required"),
   studentName: z
@@ -91,16 +74,10 @@ export const printCertificateSchema = z.object({
   ptcDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
 });
 
-/**
- * Reserve certificate schema
- */
 export const reserveCertificateSchema = z.object({
   branchId: z.number().positive("Branch selection is required"),
 });
 
-/**
- * Upload PDF schema
- */
 export const uploadPdfSchema = z.object({
   pdf: z
     .instanceof(File)
@@ -112,9 +89,6 @@ export const uploadPdfSchema = z.object({
     }),
 });
 
-/**
- * Certificate filters schema (untuk query params)
- */
 export const certificateFiltersSchema = z.object({
   status: z.enum(["in_stock", "reserved", "printed", "migrated"]).optional(),
   currentBranchId: z.number().positive().optional(),
@@ -122,11 +96,6 @@ export const certificateFiltersSchema = z.object({
   limit: z.number().int().positive().max(100).optional(),
 });
 
-/**
- * Validate student name
- * @param {string} name
- * @returns {{ valid: boolean, error?: string }}
- */
 export const validateStudentName = (name) => {
   if (!name || typeof name !== "string") {
     return { valid: false, error: "Student name is required" };
@@ -151,28 +120,20 @@ export const validateStudentName = (name) => {
   return { valid: true };
 };
 
-/**
- * Validate PTC date
- * @param {string} date - Format: YYYY-MM-DD
- * @returns {{ valid: boolean, error?: string }}
- */
 export const validatePtcDate = (date) => {
   if (!date || typeof date !== "string") {
     return { valid: false, error: "PTC date is required" };
   }
 
-  // Check format
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return { valid: false, error: "Invalid date format (YYYY-MM-DD)" };
   }
 
-  // Check if valid date
   const dateObj = new Date(date);
   if (isNaN(dateObj.getTime())) {
     return { valid: false, error: "Invalid date" };
   }
 
-  // Cannot be future date
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -183,11 +144,6 @@ export const validatePtcDate = (date) => {
   return { valid: true };
 };
 
-/**
- * Validate PDF file
- * @param {File} file
- * @returns {{ valid: boolean, error?: string }}
- */
 export const validatePdfFile = (file) => {
   if (!file) {
     return { valid: false, error: "PDF file selection is required" };
@@ -201,7 +157,7 @@ export const validatePdfFile = (file) => {
     return { valid: false, error: "File must be in PDF format" };
   }
 
-  const maxSize = 10 * 1024 * 1024; // 10MB
+  const maxSize = 10 * 1024 * 1024;
   if (file.size > maxSize) {
     return { valid: false, error: "File size must not exceed 10MB" };
   }

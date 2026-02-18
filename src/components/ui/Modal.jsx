@@ -1,16 +1,8 @@
-/**
- * Modal Component
- * Dialog with backdrop and animations
- */
-
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/utils/helpers/cn";
 import { X } from "lucide-react";
 
-/**
- * Modal sizes
- */
 const modalSizes = {
   sm: "max-w-md",
   md: "max-w-lg",
@@ -19,9 +11,6 @@ const modalSizes = {
   full: "max-w-7xl",
 };
 
-/**
- * Modal component
- */
 export const Modal = ({
   open = false,
   onClose,
@@ -35,7 +24,6 @@ export const Modal = ({
   closeOnEsc = true,
   className,
 }) => {
-  // Close on ESC key
   useEffect(() => {
     if (!open || !closeOnEsc) return;
 
@@ -49,7 +37,6 @@ export const Modal = ({
     return () => document.removeEventListener("keydown", handleEsc);
   }, [open, onClose, closeOnEsc]);
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -84,7 +71,6 @@ export const Modal = ({
         role="dialog"
         aria-modal="true"
       >
-        {/* Header */}
         {(title || description || showCloseButton) && (
           <div className="flex items-start justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
             <div className="flex-1">
@@ -111,12 +97,10 @@ export const Modal = ({
           </div>
         )}
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(100vh-200px)]">
           {children}
         </div>
 
-        {/* Footer */}
         {footer && (
           <div className="flex items-center justify-end gap-2 p-6 border-t border-neutral-200 dark:border-neutral-700">
             {footer}
@@ -128,9 +112,6 @@ export const Modal = ({
   );
 };
 
-/**
- * ModalFooter - Pre-built footer with action buttons
- */
 export const ModalFooter = ({
   onCancel,
   onConfirm,
@@ -139,7 +120,7 @@ export const ModalFooter = ({
   confirmLoading = false,
   confirmDisabled = false,
   confirmVariant = "primary",
-  confirmType = "button", // NEW: Allow dynamic button type
+  confirmType = "button",
 }) => {
   return (
     <>
@@ -151,8 +132,8 @@ export const ModalFooter = ({
         {cancelText}
       </button>
       <button
-        type={confirmType} // FIX: Use dynamic type instead of hardcoded "button"
-        onClick={confirmType === "button" ? onConfirm : undefined} // Only use onClick if type="button"
+        type={confirmType}
+        onClick={confirmType === "button" ? onConfirm : undefined}
         disabled={confirmDisabled || confirmLoading}
         className={cn(
           "px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed",

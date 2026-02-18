@@ -1,11 +1,3 @@
-/**
- * LocalStorage wrapper dengan auto JSON parse/stringify
- * Thread-safe dan error-handled
- */
-
-/**
- * Storage keys - centralized untuk consistency
- */
 const KEYS = {
   AUTH_TOKEN: "auth_token",
   REFRESH_TOKEN: "refresh_token",
@@ -14,11 +6,6 @@ const KEYS = {
   SIDEBAR_STATE: "sidebar_state",
 };
 
-/**
- * Safe JSON parse
- * @param {string} value
- * @returns {any}
- */
 const safeParse = (value) => {
   try {
     return JSON.parse(value);
@@ -27,11 +14,6 @@ const safeParse = (value) => {
   }
 };
 
-/**
- * Safe JSON stringify
- * @param {any} value
- * @returns {string}
- */
 const safeStringify = (value) => {
   try {
     return JSON.stringify(value);
@@ -40,18 +22,7 @@ const safeStringify = (value) => {
   }
 };
 
-/**
- * LocalStorage utilities
- */
 export const storage = {
-  // ============================================================================
-  // AUTH TOKENS
-  // ============================================================================
-
-  /**
-   * Get access token
-   * @returns {string|null}
-   */
   getToken: () => {
     try {
       return localStorage.getItem(KEYS.AUTH_TOKEN);
@@ -60,10 +31,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Set access token
-   * @param {string} token
-   */
   setToken: (token) => {
     try {
       if (token) {
@@ -76,10 +43,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Get refresh token
-   * @returns {string|null}
-   */
   getRefreshToken: () => {
     try {
       return localStorage.getItem(KEYS.REFRESH_TOKEN);
@@ -88,10 +51,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Set refresh token
-   * @param {string} token
-   */
   setRefreshToken: (token) => {
     try {
       if (token) {
@@ -104,14 +63,6 @@ export const storage = {
     }
   },
 
-  // ============================================================================
-  // USER DATA
-  // ============================================================================
-
-  /**
-   * Get user object
-   * @returns {Object|null}
-   */
   getUser: () => {
     try {
       const user = localStorage.getItem(KEYS.USER);
@@ -121,10 +72,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Set user object
-   * @param {Object} user - User data
-   */
   setUser: (user) => {
     try {
       if (user) {
@@ -137,14 +84,6 @@ export const storage = {
     }
   },
 
-  // ============================================================================
-  // AUTH MANAGEMENT
-  // ============================================================================
-
-  /**
-   * Clear all auth data
-   * Dipanggil saat logout
-   */
   clearAuth: () => {
     try {
       localStorage.removeItem(KEYS.AUTH_TOKEN);
@@ -155,22 +94,10 @@ export const storage = {
     }
   },
 
-  /**
-   * Check if user is authenticated
-   * @returns {boolean}
-   */
   isAuthenticated: () => {
     return !!storage.getToken();
   },
 
-  // ============================================================================
-  // UI PREFERENCES
-  // ============================================================================
-
-  /**
-   * Get theme preference
-   * @returns {'light'|'dark'|null}
-   */
   getTheme: () => {
     try {
       return localStorage.getItem(KEYS.THEME);
@@ -179,10 +106,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Set theme preference
-   * @param {'light'|'dark'} theme
-   */
   setTheme: (theme) => {
     try {
       localStorage.setItem(KEYS.THEME, theme);
@@ -191,10 +114,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Get sidebar state
-   * @returns {boolean}
-   */
   getSidebarState: () => {
     try {
       const state = localStorage.getItem(KEYS.SIDEBAR_STATE);
@@ -204,10 +123,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Set sidebar state
-   * @param {boolean} isOpen
-   */
   setSidebarState: (isOpen) => {
     try {
       localStorage.setItem(KEYS.SIDEBAR_STATE, String(isOpen));
@@ -216,21 +131,11 @@ export const storage = {
     }
   },
 
-  // ============================================================================
-  // GENERIC METHODS
-  // ============================================================================
-
-  /**
-   * Get any value from localStorage with auto-parse
-   * @param {string} key
-   * @returns {any}
-   */
   get: (key) => {
     try {
       const value = localStorage.getItem(key);
       if (!value) return null;
 
-      // Try parse as JSON first
       const parsed = safeParse(value);
       return parsed !== null ? parsed : value;
     } catch {
@@ -238,11 +143,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Set any value to localStorage with auto-stringify
-   * @param {string} key
-   * @param {any} value
-   */
   set: (key, value) => {
     try {
       if (value === null || value === undefined) {
@@ -257,10 +157,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Remove item from localStorage
-   * @param {string} key
-   */
   remove: (key) => {
     try {
       localStorage.removeItem(key);
@@ -269,10 +165,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Clear all localStorage
-   * ⚠️ Use with caution!
-   */
   clear: () => {
     try {
       localStorage.clear();
@@ -282,7 +174,4 @@ export const storage = {
   },
 };
 
-/**
- * Export storage keys untuk debugging/testing
- */
 export const STORAGE_KEYS = KEYS;

@@ -1,15 +1,7 @@
-/**
- * ThemeToggle Component
- * Button to toggle between light/dark/system themes
- */
-
 import { useTheme } from "@/hooks/shared/useTheme";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * Theme toggle button (simple version - just light/dark)
- */
 export const ThemeToggle = ({ className }) => {
   const { effectiveTheme, toggleTheme } = useTheme();
 
@@ -33,9 +25,6 @@ export const ThemeToggle = ({ className }) => {
   );
 };
 
-/**
- * Theme toggle with dropdown (advanced version - light/dark/system)
- */
 export const ThemeToggleAdvanced = ({ className }) => {
   const { theme, setTheme } = useTheme();
 
@@ -51,7 +40,6 @@ export const ThemeToggleAdvanced = ({ className }) => {
 
   return (
     <div className="relative group">
-      {/* Trigger Button */}
       <button
         className={cn(
           "p-2 rounded-lg transition-colors",
@@ -64,7 +52,6 @@ export const ThemeToggleAdvanced = ({ className }) => {
         <Icon className="w-5 h-5" />
       </button>
 
-      {/* Dropdown Menu */}
       <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
         {themes.map((themeOption) => {
           const ThemeIcon = themeOption.icon;

@@ -1,17 +1,9 @@
-/**
- * Auth Hooks
- * FIXED: Better login data handling and extensive debugging
- */
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/api";
 import { useAuthStore } from "@/store/authStore";
 import { getErrorMessage } from "@/utils/api/errorHandler";
 import { toast } from "sonner";
 
-/**
- * Login mutation - FIXED VERSION
- */
 export const useLogin = () => {
   const { login: loginStore } = useAuthStore();
   const queryClient = useQueryClient();
@@ -20,13 +12,11 @@ export const useLogin = () => {
     mutationFn: authApi.login,
     onSuccess: (data) => {
       try {
-        // 🔍 EXTENSIVE DEBUG LOGGING
         console.group("🔐 [useLogin] Processing login response");
         console.log("Raw data:", data);
         console.log("Data type:", typeof data);
         console.log("Data keys:", data ? Object.keys(data) : "null");
 
-        // ✅ FIX: Better validation with multiple field name support
         const hasUser = !!data?.user;
         const hasToken = !!(data?.accessToken || data?.token);
         const hasRefreshToken = !!(data?.refreshToken || data?.refresh_token);
@@ -36,11 +26,18 @@ export const useLogin = () => {
           hasToken,
           hasRefreshToken,
           userRole: data?.user?.role,
-          tokenField: data?.accessToken ? "accessToken" : data?.token ? "token" : "MISSING",
-          refreshField: data?.refreshToken ? "refreshToken" : data?.refresh_token ? "refresh_token" : "MISSING",
+          tokenField: data?.accessToken
+            ? "accessToken"
+            : data?.token
+              ? "token"
+              : "MISSING",
+          refreshField: data?.refreshToken
+            ? "refreshToken"
+            : data?.refresh_token
+              ? "refresh_token"
+              : "MISSING",
         });
 
-        // Validate response structure
         if (!data || typeof data !== "object") {
           console.error("❌ Invalid response format:", data);
           console.groupEnd();
@@ -69,7 +66,6 @@ export const useLogin = () => {
           return;
         }
 
-        // ✅ FIX: Normalize field names before passing to store
         const normalizedData = {
           user: data.user,
           accessToken: data.accessToken || data.token,
@@ -83,10 +79,8 @@ export const useLogin = () => {
           tokenPreview: normalizedData.accessToken?.substring(0, 20) + "...",
         });
 
-        // Login to store
         loginStore(normalizedData);
 
-        // ✅ VERIFY: Check if tokens were actually saved
         const storeState = useAuthStore.getState();
         console.log("Store state after login:", {
           hasUser: !!storeState.user,
@@ -103,10 +97,8 @@ export const useLogin = () => {
           return;
         }
 
-        // Invalidate all queries on login
         queryClient.invalidateQueries();
 
-        // Success notification
         toast.success("Login successful");
 
         console.log("✅ Login completed successfully");
@@ -125,9 +117,6 @@ export const useLogin = () => {
   });
 };
 
-/**
- * Logout mutation
- */
 export const useLogout = () => {
   const { logout: logoutStore } = useAuthStore();
   const queryClient = useQueryClient();
@@ -141,7 +130,10 @@ export const useLogout = () => {
       toast.success("Logged out successfully");
     },
     onError: (error) => {
-      console.warn("[useLogout] Logout API call failed, clearing local state anyway:", error);
+      console.warn(
+        "[useLogout] Logout API call failed, clearing local state anyway:",
+        error,
+      );
       logoutStore();
       queryClient.clear();
       const message = getErrorMessage(error);
@@ -153,9 +145,6 @@ export const useLogout = () => {
   });
 };
 
-/**
- * Change password mutation
- */
 export const useChangePassword = () => {
   return useMutation({
     mutationFn: authApi.changePassword,
@@ -171,9 +160,6 @@ export const useChangePassword = () => {
   });
 };
 
-/**
- * Change username mutation
- */
 export const useChangeUsername = () => {
   const { setUser } = useAuthStore();
   const queryClient = useQueryClient();

@@ -1,13 +1,5 @@
-/**
- * Loading Components
- * Spinner and Skeleton loaders
- */
-
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * Spinner sizes
- */
 const spinnerSizes = {
   sm: "w-4 h-4 border-2",
   md: "w-6 h-6 border-2",
@@ -15,9 +7,6 @@ const spinnerSizes = {
   xl: "w-12 h-12 border-4",
 };
 
-/**
- * Spinner component
- */
 export const Spinner = ({ size = "md", className }) => {
   return (
     <div
@@ -34,9 +23,6 @@ export const Spinner = ({ size = "md", className }) => {
   );
 };
 
-/**
- * LoadingOverlay - Full screen loading overlay
- */
 export const LoadingOverlay = ({ message, show = false }) => {
   if (!show) return null;
 
@@ -54,9 +40,6 @@ export const LoadingOverlay = ({ message, show = false }) => {
   );
 };
 
-/**
- * Skeleton - Loading placeholder
- */
 export const Skeleton = ({ className, ...props }) => {
   return (
     <div
@@ -69,28 +52,19 @@ export const Skeleton = ({ className, ...props }) => {
   );
 };
 
-/**
- * SkeletonText - Text loading placeholder
- */
 export const SkeletonText = ({ lines = 3, className }) => {
   return (
     <div className={cn("space-y-2", className)}>
       {Array.from({ length: lines }).map((_, index) => (
         <Skeleton
           key={index}
-          className={cn(
-            "h-4",
-            index === lines - 1 && "w-3/4", // Last line shorter
-          )}
+          className={cn("h-4", index === lines - 1 && "w-3/4")}
         />
       ))}
     </div>
   );
 };
 
-/**
- * SkeletonCard - Card loading placeholder
- */
 export const SkeletonCard = ({ className }) => {
   return (
     <div
@@ -105,13 +79,9 @@ export const SkeletonCard = ({ className }) => {
   );
 };
 
-/**
- * SkeletonTable - Table loading placeholder
- */
 export const SkeletonTable = ({ rows = 5, columns = 4 }) => {
   return (
     <div className="space-y-3">
-      {/* Header */}
       <div
         className="grid gap-4"
         style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
@@ -121,7 +91,6 @@ export const SkeletonTable = ({ rows = 5, columns = 4 }) => {
         ))}
       </div>
 
-      {/* Rows */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div
           key={`row-${rowIndex}`}

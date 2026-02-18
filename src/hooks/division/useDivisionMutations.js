@@ -1,16 +1,7 @@
-/**
- * Division Mutation Hooks
- * React Query hooks untuk division CRUD operations (Admin)
- */
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { divisionApi } from "@/api";
 import { getErrorMessage } from "@/utils/api/errorHandler";
 import { toast } from "sonner";
-
-// ============================================================================
-// DIVISION MUTATIONS
-// ============================================================================
 
 export const useCreateDivision = () => {
   const queryClient = useQueryClient();
@@ -77,10 +68,6 @@ export const useToggleDivisionActive = () => {
     },
   });
 };
-
-// ============================================================================
-// SUB DIVISION MUTATIONS
-// ============================================================================
 
 export const useCreateSubDivision = () => {
   const queryClient = useQueryClient();

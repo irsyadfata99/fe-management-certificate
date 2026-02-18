@@ -1,20 +1,11 @@
-/**
- * Dropdown Menu Component
- * Dropdown with menu items
- */
-
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/utils/helpers/cn";
 import { ChevronDown } from "lucide-react";
 
-/**
- * Dropdown component
- */
 export const Dropdown = ({ trigger, children, align = "left", className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -34,10 +25,8 @@ export const Dropdown = ({ trigger, children, align = "left", className }) => {
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
-      {/* Trigger */}
       <div onClick={() => setIsOpen(!isOpen)}>{trigger}</div>
 
-      {/* Dropdown Menu */}
       {isOpen && (
         <div
           className={cn(
@@ -53,9 +42,6 @@ export const Dropdown = ({ trigger, children, align = "left", className }) => {
   );
 };
 
-/**
- * DropdownTrigger - Pre-built trigger button
- */
 export const DropdownTrigger = ({ children, className }) => {
   return (
     <button
@@ -71,9 +57,6 @@ export const DropdownTrigger = ({ children, className }) => {
   );
 };
 
-/**
- * DropdownMenu - Menu items container
- */
 export const DropdownMenu = ({ children, className }) => {
   return (
     <div className={cn("py-1", className)} role="menu">
@@ -82,9 +65,6 @@ export const DropdownMenu = ({ children, className }) => {
   );
 };
 
-/**
- * DropdownItem - Individual menu item
- */
 export const DropdownItem = ({
   children,
   onClick,
@@ -114,18 +94,12 @@ export const DropdownItem = ({
   );
 };
 
-/**
- * DropdownDivider - Menu separator
- */
 export const DropdownDivider = () => {
   return (
     <div className="my-1 border-t border-neutral-200 dark:border-neutral-700" />
   );
 };
 
-/**
- * DropdownLabel - Menu section label
- */
 export const DropdownLabel = ({ children, className }) => {
   return (
     <div

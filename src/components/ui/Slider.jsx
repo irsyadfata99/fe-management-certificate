@@ -1,17 +1,20 @@
-/**
- * Slider Component
- * Range input slider with customizable min, max, and step
- */
-
 import { cn } from "@/utils/helpers/cn";
 
-export function Slider({ value = 0, onChange, min = 0, max = 100, step = 1, disabled = false, className, ...props }) {
+export function Slider({
+  value = 0,
+  onChange,
+  min = 0,
+  max = 100,
+  step = 1,
+  disabled = false,
+  className,
+  ...props
+}) {
   const handleChange = (e) => {
     const newValue = parseInt(e.target.value, 10);
     onChange?.(newValue);
   };
 
-  // Calculate percentage for gradient
   const percentage = ((value - min) / (max - min)) * 100;
 
   return (
@@ -28,12 +31,10 @@ export function Slider({ value = 0, onChange, min = 0, max = 100, step = 1, disa
           "w-full h-2 rounded-lg appearance-none cursor-pointer",
           "bg-neutral-200 dark:bg-neutral-700",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          // Custom track styling
           "[&::-webkit-slider-track]:rounded-lg",
           "[&::-webkit-slider-track]:h-2",
           "[&::-webkit-slider-track]:bg-neutral-200",
           "[&::-webkit-slider-track]:dark:bg-neutral-700",
-          // Custom thumb styling
           "[&::-webkit-slider-thumb]:appearance-none",
           "[&::-webkit-slider-thumb]:w-5",
           "[&::-webkit-slider-thumb]:h-5",
@@ -48,7 +49,6 @@ export function Slider({ value = 0, onChange, min = 0, max = 100, step = 1, disa
           "[&::-webkit-slider-thumb]:ring-2",
           "[&::-webkit-slider-thumb]:ring-white",
           "[&::-webkit-slider-thumb]:dark:ring-neutral-900",
-          // Firefox
           "[&::-moz-range-track]:rounded-lg",
           "[&::-moz-range-track]:h-2",
           "[&::-moz-range-track]:bg-neutral-200",

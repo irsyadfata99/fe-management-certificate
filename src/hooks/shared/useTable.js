@@ -1,37 +1,7 @@
-/**
- * Table Hook
- * Comprehensive hook untuk table management (pagination, filters, sorting, selection)
- */
-
 import { useState, useCallback, useMemo } from "react";
 import { usePagination } from "./usePagination";
 import { useFilters } from "./useFilters";
 
-/**
- * Manage table state (pagination, filters, sorting, selection)
- * @param {Object} [options] - Configuration options
- * @returns {Object} Table state and handlers
- *
- * @example
- * const table = useTable({
- *   initialFilters: { status: 'active' },
- *   initialSort: { field: 'created_at', order: 'desc' }
- * });
- *
- * const { data } = useStudents({
- *   ...table.pagination.params,
- *   ...table.filters.filters,
- *   ...table.sort.params
- * });
- *
- * <TableFilters {...table.filters} />
- * <Table
- *   data={data}
- *   sort={table.sort}
- *   selection={table.selection}
- * />
- * <Pagination {...table.pagination} />
- */
 export const useTable = (options = {}) => {
   const {
     initialPage = 1,
@@ -41,16 +11,13 @@ export const useTable = (options = {}) => {
     enableSelection = false,
   } = options;
 
-  // Pagination
   const pagination = usePagination({
     initialPage,
     initialLimit,
   });
 
-  // Filters
   const filters = useFilters(initialFilters);
 
-  // Sorting
   const [sort, setSort] = useState(initialSort);
 
   const handleSort = useCallback((field) => {
@@ -61,7 +28,7 @@ export const useTable = (options = {}) => {
       if (prev.order === "asc") {
         return { field, order: "desc" };
       }
-      return null; // Clear sort
+      return null;
     });
   }, []);
 
@@ -77,7 +44,6 @@ export const useTable = (options = {}) => {
     };
   }, [sort]);
 
-  // Selection
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   const toggleSelection = useCallback((id) => {
@@ -95,9 +61,9 @@ export const useTable = (options = {}) => {
   const toggleSelectAll = useCallback((ids) => {
     setSelectedIds((prev) => {
       if (prev.size === ids.length) {
-        return new Set(); // Deselect all
+        return new Set();
       }
-      return new Set(ids); // Select all
+      return new Set(ids);
     });
   }, []);
 
@@ -122,13 +88,11 @@ export const useTable = (options = {}) => {
   const selectedCount = selectedIds.size;
   const selectedArray = Array.from(selectedIds);
 
-  // Reset when filters change
   const resetOnFilterChange = useCallback(() => {
     pagination.setPage(1);
     clearSelection();
   }, [pagination, clearSelection]);
 
-  // Combined params for API calls
   const queryParams = useMemo(() => {
     return {
       ...pagination.params,
@@ -138,16 +102,13 @@ export const useTable = (options = {}) => {
   }, [pagination.params, filters.filters, sortParams]);
 
   return {
-    // Pagination
     pagination,
 
-    // Filters
     filters: {
       ...filters,
       resetAndReload: resetOnFilterChange,
     },
 
-    // Sorting
     sort: {
       current: sort,
       handleSort,
@@ -155,7 +116,6 @@ export const useTable = (options = {}) => {
       params: sortParams,
     },
 
-    // Selection (if enabled)
     ...(enableSelection && {
       selection: {
         selectedIds,
@@ -168,8 +128,6 @@ export const useTable = (options = {}) => {
         isAllSelected,
       },
     }),
-
-    // Combined
     queryParams,
   };
 };

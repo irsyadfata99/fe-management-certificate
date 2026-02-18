@@ -1,13 +1,5 @@
-/**
- * Branch validation schemas
- */
-
 import { z } from "zod";
 
-/**
- * Branch code validation
- * Format: 2-10 karakter alfanumerik
- */
 export const branchCodeSchema = z
   .string()
   .min(2, "Branch code must be at least 2 characters")
@@ -15,18 +7,12 @@ export const branchCodeSchema = z
   .regex(/^[A-Z0-9]+$/, "Code can only contain uppercase letters and numbers")
   .trim();
 
-/**
- * Branch name validation
- */
 export const branchNameSchema = z
   .string()
   .min(3, "Branch name must be at least 3 characters")
   .max(100, "Branch name must not exceed 100 characters")
   .trim();
 
-/**
- * Create head branch schema
- */
 export const createHeadBranchSchema = z.object({
   code: branchCodeSchema,
   name: branchNameSchema,
@@ -42,9 +28,6 @@ export const createHeadBranchSchema = z.object({
     .optional(),
 });
 
-/**
- * Create sub branch schema
- */
 export const createSubBranchSchema = z.object({
   code: branchCodeSchema,
   name: branchNameSchema,
@@ -52,25 +35,18 @@ export const createSubBranchSchema = z.object({
   parent_id: z.number().positive("Parent branch is required"),
 });
 
-/**
- * Update branch schema
- * ✅ FIXED: Added transforms to handle empty strings properly
- */
 export const updateBranchSchema = z.object({
   code: branchCodeSchema.optional(),
   name: branchNameSchema.optional(),
-  // ✅ FIX: Transform empty string to null/undefined
   parent_id: z
     .union([
       z.number().positive(),
-      z.string().length(0), // Allow empty string
+      z.string().length(0),
       z.null(),
       z.undefined(),
     ])
     .transform((val) => {
-      // Convert empty string to null
       if (val === "" || val === undefined) return null;
-      // Convert string numbers to actual numbers
       if (typeof val === "string") return parseInt(val, 10);
       return val;
     })
@@ -85,24 +61,17 @@ export const updateBranchSchema = z.object({
     .nullable(),
 });
 
-/**
- * Toggle head status schema
- * ✅ FIXED: Added transforms to handle empty strings properly
- */
 export const toggleHeadBranchSchema = z.object({
   is_head_branch: z.boolean(),
-  // ✅ FIX: Transform empty string to null/undefined
   parent_id: z
     .union([
       z.number().positive(),
-      z.string().length(0), // Allow empty string
+      z.string().length(0),
       z.null(),
       z.undefined(),
     ])
     .transform((val) => {
-      // Convert empty string to null
       if (val === "" || val === undefined) return null;
-      // Convert string numbers to actual numbers
       if (typeof val === "string") return parseInt(val, 10);
       return val;
     })
@@ -126,11 +95,6 @@ export const toggleHeadBranchSchema = z.object({
     .optional(),
 });
 
-/**
- * Validate branch code format
- * @param {string} code
- * @returns {{ valid: boolean, error?: string }}
- */
 export const validateBranchCode = (code) => {
   try {
     branchCodeSchema.parse(code);
@@ -142,12 +106,6 @@ export const validateBranchCode = (code) => {
     return { valid: false, error: "Invalid branch code" };
   }
 };
-
-/**
- * Validate branch name
- * @param {string} name
- * @returns {{ valid: boolean, error?: string }}
- */
 export const validateBranchName = (name) => {
   try {
     branchNameSchema.parse(name);

@@ -1,26 +1,9 @@
-/**
- * DateRangePicker Component
- * Reusable date range selector with clear and apply actions
- */
-
 import { useState } from "react";
 import { Calendar } from "lucide-react";
 import { Input } from "./Input";
 import { Button } from "./Button";
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * DateRangePicker
- * @param {Object} props
- * @param {string} props.startDate - Start date (YYYY-MM-DD)
- * @param {string} props.endDate - End date (YYYY-MM-DD)
- * @param {Function} props.onStartDateChange - Start date change handler
- * @param {Function} props.onEndDateChange - End date change handler
- * @param {Function} props.onClear - Clear handler
- * @param {Function} props.onApply - Apply handler
- * @param {string} props.className - Additional classes
- * @param {boolean} props.disabled - Disabled state
- */
 export const DateRangePicker = ({
   startDate,
   endDate,
@@ -31,14 +14,12 @@ export const DateRangePicker = ({
   className,
   disabled = false,
 }) => {
-  // Validate date range
   const [error, setError] = useState("");
 
   const handleStartDateChange = (e) => {
     const newStartDate = e.target.value;
     onStartDateChange(newStartDate);
 
-    // Validate: start date should not be after end date
     if (endDate && newStartDate && newStartDate > endDate) {
       setError("Start date cannot be after end date");
     } else {
@@ -49,8 +30,6 @@ export const DateRangePicker = ({
   const handleEndDateChange = (e) => {
     const newEndDate = e.target.value;
     onEndDateChange(newEndDate);
-
-    // Validate: end date should not be before start date
     if (startDate && newEndDate && newEndDate < startDate) {
       setError("End date cannot be before start date");
     } else {
@@ -73,9 +52,7 @@ export const DateRangePicker = ({
 
   return (
     <div className={cn("space-y-3", className)}>
-      {/* Date Inputs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Start Date */}
         <Input
           type="date"
           value={startDate}
@@ -85,8 +62,6 @@ export const DateRangePicker = ({
           error={!!error}
           disabled={disabled}
         />
-
-        {/* End Date */}
         <Input
           type="date"
           value={endDate}
@@ -98,12 +73,10 @@ export const DateRangePicker = ({
         />
       </div>
 
-      {/* Error Message */}
       {error && (
         <p className="text-xs text-danger-600 dark:text-danger-400">{error}</p>
       )}
 
-      {/* Action Buttons */}
       {hasDateRange && (
         <div className="flex items-center gap-2">
           <Button
@@ -130,12 +103,6 @@ export const DateRangePicker = ({
   );
 };
 
-/**
- * DateRangeDisplay - Display selected date range
- * @param {Object} props
- * @param {string} props.startDate
- * @param {string} props.endDate
- */
 export const DateRangeDisplay = ({ startDate, endDate }) => {
   if (!startDate && !endDate) return null;
 

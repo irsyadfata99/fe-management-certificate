@@ -1,24 +1,7 @@
-/**
- * MultiSelect Component
- * Dropdown with checkboxes for multiple selection
- */
-
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/utils/helpers/cn";
 import { ChevronDown, X } from "lucide-react";
 
-/**
- * MultiSelect component
- * @param {Object} props
- * @param {Array} props.options - Array of { value, label }
- * @param {Array} props.value - Array of selected values
- * @param {Function} props.onChange - Callback when selection changes
- * @param {string} props.placeholder - Placeholder text
- * @param {boolean} props.error - Error state
- * @param {string} props.helperText - Helper/error text
- * @param {boolean} props.fullWidth - Full width
- * @param {boolean} props.disabled - Disabled state
- */
 export const MultiSelect = ({
   options = [],
   value = [],
@@ -33,7 +16,6 @@ export const MultiSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -45,7 +27,6 @@ export const MultiSelect = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Toggle option selection
   const toggleOption = (optionValue) => {
     if (disabled) return;
 
@@ -56,14 +37,12 @@ export const MultiSelect = ({
     onChange?.(newValue);
   };
 
-  // Remove single item
   const removeItem = (optionValue, e) => {
     e.stopPropagation();
     if (disabled) return;
     onChange?.(value.filter((v) => v !== optionValue));
   };
 
-  // Get selected labels
   const selectedLabels = options
     .filter((opt) => value.includes(opt.value))
     .map((opt) => opt.label);
@@ -83,7 +62,6 @@ export const MultiSelect = ({
   return (
     <div className={cn(fullWidth && "w-full")} ref={wrapperRef}>
       <div className="relative">
-        {/* Trigger */}
         <div
           onClick={() => !disabled && setIsOpen(!isOpen)}
           className={cn(
@@ -95,7 +73,6 @@ export const MultiSelect = ({
           )}
         >
           <div className="flex items-center gap-2 flex-wrap pr-6">
-            {/* Selected Items */}
             {selectedLabels.length > 0 ? (
               selectedLabels.map((label, index) => {
                 const optionValue = options.find(
@@ -126,7 +103,6 @@ export const MultiSelect = ({
             )}
           </div>
 
-          {/* Chevron Icon */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400 dark:text-neutral-500">
             <ChevronDown
               className={cn(
@@ -137,7 +113,6 @@ export const MultiSelect = ({
           </div>
         </div>
 
-        {/* Dropdown */}
         {isOpen && !disabled && (
           <div className="absolute z-50 w-full mt-1 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
             {options.length === 0 ? (
@@ -169,7 +144,6 @@ export const MultiSelect = ({
         )}
       </div>
 
-      {/* Helper Text / Error Message */}
       {helperText && (
         <p
           className={cn(

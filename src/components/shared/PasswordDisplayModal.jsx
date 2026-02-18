@@ -1,11 +1,3 @@
-/**
- * PasswordDisplayModal Component - FIXED VERSION
- * Reusable modal for displaying generated passwords
- * Used in Branches and Teachers pages
- *
- * FIX: Changed initial showPassword state to false
- */
-
 import { Modal, ModalFooter } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
@@ -14,15 +6,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * PasswordDisplayModal
- * @param {Object} props
- * @param {boolean} props.open - Modal open state
- * @param {Function} props.onClose - Close handler
- * @param {string} props.password - Generated password
- * @param {string} props.username - Username for context
- * @param {string} props.title - Modal title
- */
 export const PasswordDisplayModal = ({
   open,
   onClose,
@@ -31,7 +14,6 @@ export const PasswordDisplayModal = ({
   title = "Password Generated",
 }) => {
   const [copied, setCopied] = useState(false);
-  // ✅ FIX: Change initial state to false so password is hidden by default
   const [showPassword, setShowPassword] = useState(false);
 
   const handleCopy = async () => {
@@ -50,7 +32,6 @@ export const PasswordDisplayModal = ({
 
   const handleClose = () => {
     setCopied(false);
-    // ✅ FIX: Reset to false (hidden) when closing
     setShowPassword(false);
     onClose();
   };
@@ -65,12 +46,9 @@ export const PasswordDisplayModal = ({
       closeOnEsc={false}
     >
       <div className="space-y-4">
-        {/* Warning Alert */}
         <Alert variant="warning" title="Important">
           Please save this password securely. It cannot be retrieved later.
         </Alert>
-
-        {/* Username */}
         {username && (
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
@@ -82,14 +60,12 @@ export const PasswordDisplayModal = ({
           </div>
         )}
 
-        {/* Password Display */}
         <div>
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
             Generated Password
           </label>
           <div className="relative">
             <div className="px-4 py-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg pr-24">
-              {/* Hidden password (always rendered for copy functionality) */}
               <input
                 type="text"
                 value={password}
@@ -98,15 +74,12 @@ export const PasswordDisplayModal = ({
                 aria-hidden="true"
               />
 
-              {/* Visible password text */}
               <div className="font-mono text-lg text-neutral-900 dark:text-neutral-100">
                 {showPassword ? password : "••••••••••••"}
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              {/* Toggle Visibility */}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -121,7 +94,6 @@ export const PasswordDisplayModal = ({
                 )}
               </button>
 
-              {/* Copy Button */}
               <button
                 type="button"
                 onClick={handleCopy}
@@ -144,13 +116,11 @@ export const PasswordDisplayModal = ({
           </div>
         </div>
 
-        {/* Helper Text */}
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
           The user will need to change this password on their first login.
         </p>
       </div>
 
-      {/* Footer */}
       <ModalFooter
         onConfirm={handleClose}
         confirmText="Done"

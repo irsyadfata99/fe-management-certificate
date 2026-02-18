@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   CSS CUSTOM PROPERTIES
-   — Design tokens yang tidak bisa di-handle Tailwind saja
-   ============================================================ */
-
 :root {
   /* --- Base colors (light mode) --- */
   --color-bg: #f1f5f9;
@@ -108,10 +103,6 @@
       transparent 45%
     );
 }
-
-/* ============================================================
-   BASE RESET & DEFAULTS
-   ============================================================ */
 
 @layer base {
   *,

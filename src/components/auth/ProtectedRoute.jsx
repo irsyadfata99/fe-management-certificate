@@ -1,32 +1,6 @@
-/**
- * Protected Route & Public Route Components
- * Handle authentication and role-based access control
- * UPDATED: ProtectedRoute now supports allowedRoles prop
- */
-
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 
-/**
- * Protected Route - Requires authentication + optional role check
- *
- * @param {Object} props
- * @param {React.ReactNode} props.children - Child components
- * @param {string|string[]} [props.allowedRoles] - Allowed roles (optional)
- * @param {string} [props.redirectTo="/unauthorized"] - Redirect if role not allowed
- *
- * @example
- * // Auth only
- * <ProtectedRoute>
- *   <Layout />
- * </ProtectedRoute>
- *
- * @example
- * // Auth + role check
- * <ProtectedRoute allowedRoles={["teacher"]}>
- *   <TeacherPrintsPage />
- * </ProtectedRoute>
- */
 export function ProtectedRoute({
   children,
   allowedRoles,
@@ -35,12 +9,10 @@ export function ProtectedRoute({
   const { isAuthenticated, user, token } = useAuthStore();
   const location = useLocation();
 
-  // Check authentication
   if (!isAuthenticated || !user || !token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check role if allowedRoles is provided
   if (allowedRoles?.length) {
     const userRole = user.role?.toLowerCase().replace(/[_\s-]/g, "") ?? "";
     const normalizedAllowed = (
@@ -55,18 +27,6 @@ export function ProtectedRoute({
   return children;
 }
 
-/**
- * Public Route - Only accessible when NOT authenticated
- * Redirects to dashboard if already logged in
- *
- * @param {Object} props
- * @param {React.ReactNode} props.children - Child components
- *
- * @example
- * <PublicRoute>
- *   <LoginPage />
- * </PublicRoute>
- */
 export function PublicRoute({ children }) {
   const { isAuthenticated, user, token } = useAuthStore();
   const location = useLocation();
@@ -79,21 +39,6 @@ export function PublicRoute({ children }) {
   return children;
 }
 
-/**
- * Role Guard Component
- * Restricts access based on user role
- * Use this INSIDE protected routes for role-specific pages
- *
- * @param {Object} props
- * @param {string|string[]} props.allowedRoles - Allowed role(s)
- * @param {React.ReactNode} props.children - Child components
- * @param {string} [props.redirectTo="/unauthorized"] - Where to redirect if not allowed
- *
- * @example
- * <RoleGuard allowedRoles={['admin', 'superadmin']}>
- *   <ManagementPanel />
- * </RoleGuard>
- */
 export function RoleGuard({
   allowedRoles,
   children,
@@ -119,21 +64,6 @@ export function RoleGuard({
   return children;
 }
 
-/**
- * Permission Guard Component
- * Uses role hierarchy instead of exact role match
- * SuperAdmin > Admin > Teacher
- *
- * @param {Object} props
- * @param {string} props.minimumRole - Minimum required role
- * @param {React.ReactNode} props.children - Child components
- * @param {string} [props.redirectTo="/unauthorized"] - Where to redirect if not allowed
- *
- * @example
- * <PermissionGuard minimumRole="admin">
- *   <AdminPanel />
- * </PermissionGuard>
- */
 export function PermissionGuard({
   minimumRole,
   children,

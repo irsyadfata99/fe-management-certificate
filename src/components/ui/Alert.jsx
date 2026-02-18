@@ -1,15 +1,6 @@
-/**
- * Alert Component
- * Notification/alert boxes with variants
- * FIXED: Better text contrast in dark mode
- */
-
 import { cn } from "@/utils/helpers/cn";
 import { X, AlertCircle, CheckCircle, AlertTriangle, Info } from "lucide-react";
 
-/**
- * Alert variants with icons
- */
 const alertVariants = {
   default: {
     container:
@@ -43,9 +34,6 @@ const alertVariants = {
   },
 };
 
-/**
- * Alert component
- */
 export const Alert = ({
   children,
   variant = "default",
@@ -65,18 +53,15 @@ export const Alert = ({
       )}
       role="alert"
     >
-      {/* Icon */}
       <div className="flex-shrink-0">
         <Icon className={cn("w-5 h-5", config.iconColor)} />
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         {title && <h5 className="font-semibold mb-1 text-sm">{title}</h5>}
         <div className="text-sm">{children}</div>
       </div>
 
-      {/* Close Button */}
       {onClose && (
         <button
           onClick={onClose}

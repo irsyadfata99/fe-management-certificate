@@ -1,8 +1,3 @@
-/**
- * Teacher Mutation Hooks (Admin)
- * React Query hooks untuk teacher CRUD operations
- */
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { teacherApi } from "@/api";
 import { getErrorMessage } from "@/utils/api/errorHandler";
@@ -71,29 +66,12 @@ export const useToggleTeacherActive = () => {
   });
 };
 
-/**
- * Migrate teacher to a new primary branch within the same head branch.
- * Setelah berhasil, teacher list di-refresh otomatis.
- *
- * @returns {Object} Mutation object
- *
- * @example
- * const { mutate: migrateTeacher, isPending } = useMigrateTeacher();
- *
- * migrateTeacher(
- *   { id: 1, target_branch_id: 3 },
- *   {
- *     onSuccess: (teacher) => {
- *       console.log('New primary branch:', teacher.branch_id);
- *     }
- *   }
- * );
- */
 export const useMigrateTeacher = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, target_branch_id }) => teacherApi.migrateTeacher(id, { target_branch_id }),
+    mutationFn: ({ id, target_branch_id }) =>
+      teacherApi.migrateTeacher(id, { target_branch_id }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["teachers"] });
       queryClient.invalidateQueries({ queryKey: ["teachers", variables.id] });

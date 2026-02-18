@@ -1,14 +1,6 @@
-/**
- * Textarea Component
- * Multi-line text input with dark mode support
- */
-
 import { forwardRef } from "react";
 import { cn } from "@/utils/helpers/cn";
 
-/**
- * Textarea component
- */
 export const Textarea = forwardRef(
   (
     {
@@ -42,8 +34,6 @@ export const Textarea = forwardRef(
           )}
           {...props}
         />
-
-        {/* Helper Text / Error Message */}
         {helperText && (
           <p
             className={cn(

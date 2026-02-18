@@ -1,31 +1,19 @@
-/**
- * Sidebar Navigation Configuration
- * Role-based menu items untuk SuperAdmin, Admin, dan Teacher
- *
- * Route map:
- *   /dashboard               — semua role
- *   /profile                 — semua role
- *   /branches                — superadmin
- *   /certificates            — admin
- *   /certificates/stock      — admin
- *   /certificates/logs       — admin
- *   /teachers                — admin
- *   /divisions               — admin  ← DivisionsPage
- *   /modules                 — admin
- *   /backup                  — admin
- *   /certificates/print      — teacher
- *   /certificates/reservations — teacher
- *   /certificates/history    — teacher
- *   /students                — teacher
- */
+import {
+  LayoutDashboard,
+  Building2,
+  Layers,
+  BookOpen,
+  Users,
+  Award,
+  FileText,
+  UserCircle,
+  Package,
+  ClipboardList,
+  Printer,
+  Clock,
+  Database,
+} from "lucide-react";
 
-import { LayoutDashboard, Building2, Layers, BookOpen, Users, Award, FileText, UserCircle, Package, ClipboardList, Printer, Clock, Database } from "lucide-react";
-
-/**
- * Menu structure per role
- * Format: { label, path, icon, badge?, description?, children? }
- * children: sub-menu items (grouped navigation)
- */
 export const SIDEBAR_MENUS = {
   superadmin: [
     {
@@ -47,7 +35,6 @@ export const SIDEBAR_MENUS = {
       path: "/dashboard",
       icon: LayoutDashboard,
     },
-    // GROUPED: Certificate menu dengan 3 sub-menu
     {
       label: "Certificates",
       icon: Award,
@@ -117,19 +104,8 @@ export const SIDEBAR_MENUS = {
       icon: Clock,
       description: "My print History",
     },
-    {
-      label: "Students",
-      path: "/students",
-      icon: UserCircle,
-      description: "Search students",
-    },
   ],
 };
-
-/**
- * Get menu items for current user role.
- * Handles various role formats from backend (e.g. "SuperAdmin", "super_admin", "admin")
- */
 export const getMenuItems = (role) => {
   if (!role) return [];
 
@@ -145,7 +121,9 @@ export const getMenuItems = (role) => {
 
   if (!mapped) {
     if (import.meta.env.DEV) {
-      console.warn(`[Sidebar] Unknown role: "${role}" (normalized: "${normalized}")`);
+      console.warn(
+        `[Sidebar] Unknown role: "${role}" (normalized: "${normalized}")`,
+      );
     }
     return [];
   }
@@ -153,9 +131,6 @@ export const getMenuItems = (role) => {
   return SIDEBAR_MENUS[mapped] ?? [];
 };
 
-/**
- * Bottom navigation items — ditampilkan di semua role
- */
 export const BOTTOM_MENU_ITEMS = [
   {
     label: "Profile",

@@ -7,17 +7,6 @@ import {
 import { getCertificateBranches } from "../../api/certificate.api";
 import { useAuthStore } from "../../store/authStore";
 
-// ============================================================================
-// QUERY: Get All Branches (with role-based endpoint selection)
-// ============================================================================
-
-/**
- * ✅ FIXED: Hook untuk get branches dengan role-based endpoint
- * - SuperAdmin: uses /branches endpoint
- * - Admin: uses /certificates/branches endpoint (NEW!)
- *
- * @param {boolean} includeInactive - Include inactive branches (default: false)
- */
 export const useBranches = (includeInactive = false) => {
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "admin";
@@ -25,11 +14,9 @@ export const useBranches = (includeInactive = false) => {
   return useQuery({
     queryKey: ["branches", { includeInactive, role: user?.role }],
     queryFn: async () => {
-      // Admin uses /certificates/branches endpoint
       if (isAdmin) {
         const response = await getCertificateBranches();
 
-        // Transform to match expected structure
         return {
           branches: response.branches || [],
           stats: {
@@ -51,22 +38,13 @@ export const useBranches = (includeInactive = false) => {
         };
       }
 
-      // SuperAdmin uses /branches endpoint
       return await getAllBranches(includeInactive);
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!user, // Only fetch when user is authenticated
+    staleTime: 5 * 60 * 1000,
+    enabled: !!user,
   });
 };
 
-// ============================================================================
-// QUERY: Get Head Branches (for dropdowns)
-// ============================================================================
-
-/**
- * Hook untuk get head branches only (untuk dropdown parent selection)
- * Only accessible by SuperAdmin
- */
 export const useHeadBranches = () => {
   const user = useAuthStore((state) => state.user);
   const isSuperAdmin = user?.role === "superAdmin";
@@ -75,18 +53,10 @@ export const useHeadBranches = () => {
     queryKey: ["branches", "heads"],
     queryFn: getHeadBranches,
     staleTime: 5 * 60 * 1000,
-    enabled: isSuperAdmin, // Only SuperAdmin can access this
+    enabled: isSuperAdmin,
   });
 };
 
-// ============================================================================
-// QUERY: Get Branch by ID
-// ============================================================================
-
-/**
- * Hook untuk get single branch by ID
- * @param {number} id - Branch ID
- */
 export const useBranch = (id, options = {}) => {
   return useQuery({
     queryKey: ["branches", id],

@@ -1,14 +1,6 @@
-/**
- * Table Component
- * Data table with sorting and dark mode support
- */
-
 import { cn } from "@/utils/helpers/cn";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
-/**
- * Table container
- */
 export const Table = ({ children, className }) => {
   return (
     <div className="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-700">
@@ -24,9 +16,6 @@ export const Table = ({ children, className }) => {
   );
 };
 
-/**
- * Table Header
- */
 export const TableHeader = ({ children, className }) => {
   return (
     <thead className={cn("bg-neutral-50 dark:bg-neutral-800/50", className)}>
@@ -35,9 +24,6 @@ export const TableHeader = ({ children, className }) => {
   );
 };
 
-/**
- * Table Body
- */
 export const TableBody = ({ children, className }) => {
   return (
     <tbody
@@ -51,9 +37,6 @@ export const TableBody = ({ children, className }) => {
   );
 };
 
-/**
- * Table Row
- */
 export const TableRow = ({ children, onClick, className }) => {
   return (
     <tr
@@ -70,9 +53,6 @@ export const TableRow = ({ children, onClick, className }) => {
   );
 };
 
-/**
- * Table Head Cell
- */
 export const TableHead = ({
   children,
   sortable = false,
@@ -125,9 +105,6 @@ export const TableHead = ({
   );
 };
 
-/**
- * Table Cell
- */
 export const TableCell = ({ children, align = "left", className }) => {
   const alignClasses = {
     left: "text-left",
@@ -148,9 +125,6 @@ export const TableCell = ({ children, align = "left", className }) => {
   );
 };
 
-/**
- * Table Empty State
- */
 export const TableEmpty = ({ message = "No data available", colSpan }) => {
   return (
     <TableRow>
@@ -163,9 +137,6 @@ export const TableEmpty = ({ message = "No data available", colSpan }) => {
   );
 };
 
-/**
- * Table Loading State
- */
 export const TableLoading = ({ colSpan, rows = 5 }) => {
   return (
     <>
