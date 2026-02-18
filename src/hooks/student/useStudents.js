@@ -1,6 +1,6 @@
 /**
- * Students Query Hooks
- * React Query hooks untuk fetching student data
+ * Students Query & Mutation Hooks
+ * React Query hooks untuk fetching dan mutating student data
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,16 +9,16 @@ import { getErrorMessage } from "@/utils/api/errorHandler";
 import { toast } from "sonner";
 
 /**
- * Get all students
+ * Get all students with full detail columns:
+ * name, division, sub_division, current_module, current_teacher, last_issued_certificate
+ *
  * @param {Object} [params] - Query parameters
  * @returns {Object} Query object
  *
  * @example
- * const { data, isLoading } = useStudents({
- *   search: 'john',
- *   page: 1,
- *   limit: 20
- * });
+ * const { data, isLoading } = useStudents({ search: 'john', page: 1 });
+ * const students = data?.students || [];
+ * const pagination = data?.pagination || {};
  */
 export const useStudents = (params = {}) => {
   return useQuery({
@@ -29,7 +29,7 @@ export const useStudents = (params = {}) => {
 };
 
 /**
- * Get student by ID
+ * Get student by ID with full detail
  * @param {number} id - Student ID
  * @param {Object} [options] - Query options
  * @returns {Object} Query object
@@ -41,7 +41,6 @@ export const useStudent = (id, options = {}) => {
   return useQuery({
     queryKey: ["students", id],
     queryFn: () => studentApi.getStudentById(id),
-    select: (data) => data.student,
     enabled: !!id,
     ...options,
   });
@@ -54,10 +53,8 @@ export const useStudent = (id, options = {}) => {
  * @returns {Object} Query object
  *
  * @example
- * const { data: history } = useStudentHistory(1, {
- *   startDate: '2024-01-01',
- *   page: 1
- * });
+ * const { data } = useStudentHistory(1, { startDate: '2024-01-01' });
+ * const { history, pagination } = data || {};
  */
 export const useStudentHistory = (id, params = {}) => {
   return useQuery({
@@ -74,10 +71,8 @@ export const useStudentHistory = (id, params = {}) => {
  * @returns {Object} Query object
  *
  * @example
- * const { data: statistics } = useStudentStatistics({
- *   startDate: '2024-01-01',
- *   moduleId: 5
- * });
+ * const { data } = useStudentStatistics();
+ * const { statistics } = data || {};
  */
 export const useStudentStatistics = (params = {}) => {
   return useQuery({
@@ -88,12 +83,11 @@ export const useStudentStatistics = (params = {}) => {
 };
 
 /**
- * Update student mutation
+ * Update student name mutation
  * @returns {Object} Mutation object
  *
  * @example
  * const { mutate: updateStudent } = useUpdateStudent();
- *
  * updateStudent({ id: 1, data: { name: 'Updated Name' } });
  */
 export const useUpdateStudent = () => {
@@ -101,7 +95,7 @@ export const useUpdateStudent = () => {
 
   return useMutation({
     mutationFn: ({ id, data }) => studentApi.updateStudent(id, data),
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["students", variables.id] });
       toast.success("Student updated successfully");
@@ -114,12 +108,11 @@ export const useUpdateStudent = () => {
 };
 
 /**
- * Toggle student active status
+ * Toggle student active status mutation
  * @returns {Object} Mutation object
  *
  * @example
  * const { mutate: toggleActive } = useToggleStudentActive();
- *
  * toggleActive(1);
  */
 export const useToggleStudentActive = () => {
@@ -127,10 +120,45 @@ export const useToggleStudentActive = () => {
 
   return useMutation({
     mutationFn: studentApi.toggleStudentActive,
-    onSuccess: (data, id) => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["students", id] });
       toast.success("Student status updated successfully");
+    },
+    onError: (error) => {
+      const message = getErrorMessage(error);
+      toast.error(message);
+    },
+  });
+};
+
+/**
+ * Migrate student to another sub-branch within the same head branch.
+ *
+ * @returns {Object} Mutation object
+ *
+ * @example
+ * const { mutate: migrateStudent, isPending } = useMigrateStudent();
+ *
+ * migrateStudent(
+ *   { id: 1, target_branch_id: 3 },
+ *   {
+ *     onSuccess: (data) => {
+ *       console.log('Migrated to:', data.migrated_to_branch.name);
+ *     }
+ *   }
+ * );
+ */
+export const useMigrateStudent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, target_branch_id }) => studentApi.migrateStudent(id, { target_branch_id }),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["students", variables.id] });
+      const branchName = data?.migrated_to_branch?.name || "target branch";
+      toast.success(`Student migrated to ${branchName}`);
     },
     onError: (error) => {
       const message = getErrorMessage(error);

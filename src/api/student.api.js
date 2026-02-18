@@ -14,7 +14,6 @@ import { API_ENDPOINTS } from "@/utils/constants/endpoints";
  *
  * @example
  * const { students } = await searchStudents({ name: 'john' });
- * // Returns matching students for autocomplete
  */
 export const searchStudents = async (params) => {
   const { data } = await api.get(API_ENDPOINTS.STUDENTS.SEARCH, { params });
@@ -22,7 +21,9 @@ export const searchStudents = async (params) => {
 };
 
 /**
- * Get all students
+ * Get all students with full detail
+ * Response includes: division, sub_division, current_module, current_teacher, last_issued_certificate
+ *
  * @param {Object} [params]
  * @param {string} [params.search] - Search by name
  * @param {number} [params.page=1] - Page number
@@ -31,11 +32,8 @@ export const searchStudents = async (params) => {
  * @returns {Promise<{students: Array, pagination: Object}>}
  *
  * @example
- * const result = await getAllStudents({
- *   search: 'john',
- *   page: 1,
- *   limit: 20
- * });
+ * const result = await getAllStudents({ search: 'john', page: 1 });
+ * // students[0]: { id, name, division, sub_division, current_module, current_teacher, last_issued_certificate }
  */
 export const getAllStudents = async (params = {}) => {
   const { data } = await api.get(API_ENDPOINTS.STUDENTS.GET_ALL, { params });
@@ -43,12 +41,12 @@ export const getAllStudents = async (params = {}) => {
 };
 
 /**
- * Get student by ID
+ * Get student by ID with full detail
  * @param {number} id - Student ID
- * @returns {Promise<{student: Object}>}
+ * @returns {Promise<Object>}
  *
  * @example
- * const { student } = await getStudentById(1);
+ * const student = await getStudentById(1);
  */
 export const getStudentById = async (id) => {
   const { data } = await api.get(API_ENDPOINTS.STUDENTS.GET_BY_ID(id));
@@ -66,10 +64,7 @@ export const getStudentById = async (id) => {
  * @returns {Promise<{history: Array, pagination: Object}>}
  *
  * @example
- * const result = await getStudentHistory(1, {
- *   startDate: '2024-01-01',
- *   page: 1
- * });
+ * const result = await getStudentHistory(1, { startDate: '2024-01-01' });
  */
 export const getStudentHistory = async (id, params = {}) => {
   const { data } = await api.get(API_ENDPOINTS.STUDENTS.GET_HISTORY(id), { params });
@@ -79,16 +74,10 @@ export const getStudentHistory = async (id, params = {}) => {
 /**
  * Get student statistics
  * @param {Object} [params]
- * @param {string} [params.startDate] - Filter by date range
- * @param {string} [params.endDate] - Filter by date range
- * @param {number} [params.moduleId] - Filter by module
  * @returns {Promise<{statistics: Object}>}
  *
  * @example
- * const { statistics } = await getStudentStatistics({
- *   startDate: '2024-01-01',
- *   moduleId: 5
- * });
+ * const { statistics } = await getStudentStatistics();
  */
 export const getStudentStatistics = async (params = {}) => {
   const { data } = await api.get(API_ENDPOINTS.STUDENTS.GET_STATISTICS, { params });
@@ -96,16 +85,14 @@ export const getStudentStatistics = async (params = {}) => {
 };
 
 /**
- * Update student
+ * Update student name
  * @param {number} id - Student ID
  * @param {Object} updates
  * @param {string} updates.name - New student name
- * @returns {Promise<{student: Object, message: string}>}
+ * @returns {Promise<Object>}
  *
  * @example
- * const { student } = await updateStudent(1, {
- *   name: 'Updated Name'
- * });
+ * await updateStudent(1, { name: 'Updated Name' });
  */
 export const updateStudent = async (id, updates) => {
   const { data } = await api.put(API_ENDPOINTS.STUDENTS.UPDATE(id), updates);
@@ -115,12 +102,32 @@ export const updateStudent = async (id, updates) => {
 /**
  * Toggle student active status
  * @param {number} id - Student ID
- * @returns {Promise<{student: Object, message: string}>}
+ * @returns {Promise<Object>}
  *
  * @example
- * const { student } = await toggleStudentActive(1);
+ * await toggleStudentActive(1);
  */
 export const toggleStudentActive = async (id) => {
   const { data } = await api.patch(API_ENDPOINTS.STUDENTS.TOGGLE_ACTIVE(id));
+  return data;
+};
+
+/**
+ * Migrate student to another sub-branch within the same head branch
+ * Head branch tidak berubah; hanya sub-branch assignment yang berpindah.
+ * Future certificate prints akan menggunakan target branch.
+ *
+ * @param {number} id - Student ID
+ * @param {Object} payload
+ * @param {number} payload.target_branch_id - Target sub-branch ID (harus 1 head branch yang sama)
+ * @returns {Promise<Object>}
+ *
+ * @example
+ * const result = await migrateStudent(1, { target_branch_id: 3 });
+ * // result.migrated_to_branch: { id, code, name }
+ * // result.note: "Student migration recorded..."
+ */
+export const migrateStudent = async (id, payload) => {
+  const { data } = await api.post(API_ENDPOINTS.STUDENTS.MIGRATE(id), payload);
   return data;
 };
