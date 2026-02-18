@@ -19,21 +19,7 @@
  *   /students                — teacher
  */
 
-import {
-  LayoutDashboard,
-  Building2,
-  Layers,
-  BookOpen,
-  Users,
-  Award,
-  FileText,
-  UserCircle,
-  Package,
-  ClipboardList,
-  Printer,
-  Clock,
-  Database,
-} from "lucide-react";
+import { LayoutDashboard, Building2, Layers, BookOpen, Users, Award, FileText, UserCircle, Package, ClipboardList, Printer, Clock, Database } from "lucide-react";
 
 /**
  * Menu structure per role
@@ -121,22 +107,15 @@ export const SIDEBAR_MENUS = {
     },
     {
       label: "Print Certificate",
-      path: "/certificates/print",
+      path: "/certificates/reservations",
       icon: Printer,
       description: "Reserve & print",
     },
     {
-      label: "My Reservations",
-      path: "/certificates/reservations",
-      icon: Clock,
-      description: "Active reservations",
-      badge: "dynamic",
-    },
-    {
       label: "Print History",
-      path: "/certificates/history",
-      icon: FileText,
-      description: "My print records",
+      path: "/certificates/print",
+      icon: Clock,
+      description: "My print History",
     },
     {
       label: "Students",
@@ -166,9 +145,7 @@ export const getMenuItems = (role) => {
 
   if (!mapped) {
     if (import.meta.env.DEV) {
-      console.warn(
-        `[Sidebar] Unknown role: "${role}" (normalized: "${normalized}")`,
-      );
+      console.warn(`[Sidebar] Unknown role: "${role}" (normalized: "${normalized}")`);
     }
     return [];
   }

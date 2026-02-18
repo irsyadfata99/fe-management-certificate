@@ -484,7 +484,9 @@ export default function TeacherPrintsPage() {
 
                     {/* Print Date */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{formatDateTime(print.created_at)}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {formatDateTime(print.printed_at || print.createdAt)} {/* tambah fallback */}
+                      </span>
                     </td>
 
                     {/* PDF Status */}

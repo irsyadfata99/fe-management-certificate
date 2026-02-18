@@ -46,13 +46,13 @@ export const useUploadCertificatePdf = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ printId, file }) =>
-      certificatePdfApi.uploadCertificatePdf(printId, file),
+    mutationFn: ({ printId, file }) => certificatePdfApi.uploadCertificatePdf(printId, file),
     onSuccess: () => {
       // ← REMOVE 'data, variables'
-      queryClient.invalidateQueries({ queryKey: ["certificate-pdfs"] });
+      queryClient.invalidateQueries({ queryKey: ["my-prints"] });
       queryClient.invalidateQueries({
-        queryKey: ["certificates", "my-prints"],
+        queryKey: ["certificates"],
+        exact: false,
       });
       toast.success("PDF uploaded successfully");
     },
@@ -75,16 +75,11 @@ export const useUploadCertificatePdf = () => {
 export const useDownloadCertificatePdf = () => {
   return useMutation({
     mutationFn: async (printId) => {
-      const response = await api.get(
-        API_ENDPOINTS.CERTIFICATE_PDF.DOWNLOAD(printId),
-        {
-          responseType: "blob",
-        },
-      );
+      const response = await api.get(API_ENDPOINTS.CERTIFICATE_PDF.DOWNLOAD(printId), {
+        responseType: "blob",
+      });
 
-      const filename =
-        getFilenameFromHeader(response.headers["content-disposition"]) ||
-        `certificate-${printId}.pdf`;
+      const filename = getFilenameFromHeader(response.headers["content-disposition"]) || `certificate-${printId}.pdf`;
 
       downloadBlob(response.data, filename);
 
@@ -117,7 +112,8 @@ export const useDeleteCertificatePdf = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["certificate-pdfs"] });
       queryClient.invalidateQueries({
-        queryKey: ["certificates", "my-prints"],
+        queryKey: ["certificates"],
+        exact: false,
       });
       toast.success("PDF deleted successfully");
     },
