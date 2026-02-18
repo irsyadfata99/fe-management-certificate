@@ -17,24 +17,16 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { FormField, FormLabel, FormError } from "@/components/ui/Form";
 
-import {
-  useReserveCertificate,
-  usePrintCertificate,
-} from "@/hooks/certificate/useTeacherCertificates";
-import {
-  useTeacherBranches,
-  useTeacherModules,
-} from "@/hooks/teacher/useTeacherProfile";
+import { useReserveCertificate, usePrintCertificate } from "@/hooks/certificate/useTeacherCertificates";
+import { useTeacherBranches, useTeacherModules } from "@/hooks/teacher/useTeacherProfile";
 import { printCertificateSchema } from "@/utils/validation/certificateValidation";
 
 // ---------------------------------------------------------------------------
 // Font URLs dari Google Fonts CDN
 // ---------------------------------------------------------------------------
 const FONT_URLS = {
-  playfair:
-    "https://fonts.gstatic.com/s/playfairdisplay/v37/nuFiD-vYSZviVYUb_rj3ij__anPXDTzYh0o.woff2",
-  montserrat:
-    "https://fonts.gstatic.com/s/montserrat/v26/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Ew-.woff2",
+  playfair: "https://fonts.gstatic.com/s/playfairdisplay/v37/nuFiD-vYSZviVYUb_rj3ij__anPXDTzYh0o.woff2",
+  montserrat: "https://fonts.gstatic.com/s/montserrat/v26/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Ew-.woff2",
 };
 
 // Cache base64 font agar tidak di-fetch ulang setiap kali print
@@ -78,17 +70,8 @@ const formatPtcDate = (date) => {
 // ---------------------------------------------------------------------------
 // Generate HTML string dengan font base64 ter-embed
 // ---------------------------------------------------------------------------
-const buildPrintHTML = ({
-  studentName,
-  moduleName,
-  ptcDate,
-  divisionName,
-  playfairBase64,
-  montserratBase64,
-}) => {
-  const moduleColor = divisionName?.includes("LK")
-    ? "magenta"
-    : "cornflowerblue";
+const buildPrintHTML = ({ studentName, moduleName, ptcDate, divisionName, playfairBase64, montserratBase64 }) => {
+  const moduleColor = divisionName?.includes("LK") ? "magenta" : "cornflowerblue";
   const formattedDate = formatPtcDate(ptcDate);
 
   return `<!DOCTYPE html>
@@ -166,8 +149,8 @@ const buildPrintHTML = ({
 
     .ptc-date {
       position: absolute;
-      top: 176.50mm;
-      left: 76.2mm;
+      top: 172.50mm;
+      left: 73.8mm;
       font-family: 'Montserrat', Arial, sans-serif;
       font-size: 18pt;
       font-weight: 600;
@@ -203,9 +186,7 @@ const buildPrintHTML = ({
 // ---------------------------------------------------------------------------
 const CertificatePreview = ({ data }) => {
   const { studentName, moduleName, ptcDate, divisionName } = data;
-  const moduleColor = divisionName?.includes("LK")
-    ? "magenta"
-    : "cornflowerblue";
+  const moduleColor = divisionName?.includes("LK") ? "magenta" : "cornflowerblue";
 
   return (
     <div
@@ -259,8 +240,8 @@ const CertificatePreview = ({ data }) => {
       <div
         style={{
           position: "absolute",
-          top: "176.50mm",
-          left: "76.2mm",
+          top: "172.50mm",
+          left: "73.8mm",
           fontFamily: "'Montserrat', Arial, sans-serif",
           fontSize: "18pt",
           fontWeight: 600,
@@ -269,11 +250,7 @@ const CertificatePreview = ({ data }) => {
           whiteSpace: "nowrap",
         }}
       >
-        {ptcDate ? (
-          formatPtcDate(ptcDate)
-        ) : (
-          <span style={{ color: "#ccc" }}>Tanggal PTC</span>
-        )}
+        {ptcDate ? formatPtcDate(ptcDate) : <span style={{ color: "#ccc" }}>Tanggal PTC</span>}
       </div>
     </div>
   );
@@ -331,8 +308,7 @@ export default function PrintCertificatePage() {
   const previewData = {
     studentName,
     moduleName: selectedModule?.name || "",
-    divisionName:
-      selectedModule?.division?.name || selectedModule?.division_name || "",
+    divisionName: selectedModule?.division?.name || selectedModule?.division_name || "",
     ptcDate,
   };
 
@@ -355,10 +331,7 @@ export default function PrintCertificatePage() {
         setIsPrinting(true);
         try {
           // Fetch font di main window (bebas CSP), lalu embed ke print HTML
-          const [playfairBase64, montserratBase64] = await Promise.all([
-            fetchFontAsBase64("playfair", FONT_URLS.playfair),
-            fetchFontAsBase64("montserrat", FONT_URLS.montserrat),
-          ]);
+          const [playfairBase64, montserratBase64] = await Promise.all([fetchFontAsBase64("playfair", FONT_URLS.playfair), fetchFontAsBase64("montserrat", FONT_URLS.montserrat)]);
 
           const printWindow = window.open("", "_blank");
           if (!printWindow) {
@@ -366,13 +339,7 @@ export default function PrintCertificatePage() {
             return;
           }
 
-          printWindow.document.write(
-            buildPrintHTML({
-              ...previewData,
-              playfairBase64,
-              montserratBase64,
-            }),
-          );
+          printWindow.document.write(buildPrintHTML({ ...previewData, playfairBase64, montserratBase64 }));
           printWindow.document.close();
 
           print({ ...values, certificateId: reservedCert?.id });
@@ -381,13 +348,7 @@ export default function PrintCertificatePage() {
           // Fallback: buka print window tanpa font embed
           const printWindow = window.open("", "_blank");
           if (printWindow) {
-            printWindow.document.write(
-              buildPrintHTML({
-                ...previewData,
-                playfairBase64: "",
-                montserratBase64: "",
-              }),
-            );
+            printWindow.document.write(buildPrintHTML({ ...previewData, playfairBase64: "", montserratBase64: "" }));
             printWindow.document.close();
             print({ ...values, certificateId: reservedCert?.id });
           }
@@ -404,32 +365,20 @@ export default function PrintCertificatePage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white">
-          Print Certificate
-        </h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-          Isi semua data di bawah, lalu cetak sertifikat.
-        </p>
+        <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white">Print Certificate</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Isi semua data di bawah, lalu cetak sertifikat.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
         {/* ── LEFT: Form Card ── */}
         <Card className="lg:sticky lg:top-6">
           <div className="p-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary-500 mb-5">
-              Data Sertifikat
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary-500 mb-5">Data Sertifikat</p>
 
             <div className="flex flex-col gap-4">
               <FormField>
                 <FormLabel required>Cabang</FormLabel>
-                <Select
-                  value={selectedBranchId}
-                  onChange={(e) => setSelectedBranchId(e.target.value)}
-                  disabled={!!reservedCert}
-                  placeholder="Pilih cabang"
-                  fullWidth
-                >
+                <Select value={selectedBranchId} onChange={(e) => setSelectedBranchId(e.target.value)} disabled={!!reservedCert} placeholder="Pilih cabang" fullWidth>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
@@ -437,15 +386,7 @@ export default function PrintCertificatePage() {
                   ))}
                 </Select>
                 {!reservedCert ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-2 w-full"
-                    onClick={handleReserve}
-                    loading={isReserving}
-                    disabled={!selectedBranchId || isReserving}
-                    type="button"
-                  >
+                  <Button size="sm" variant="outline" className="mt-2 w-full" onClick={handleReserve} loading={isReserving} disabled={!selectedBranchId || isReserving} type="button">
                     Reserve Sertifikat
                   </Button>
                 ) : (
@@ -458,13 +399,7 @@ export default function PrintCertificatePage() {
 
               <FormField>
                 <FormLabel required>Nama Student</FormLabel>
-                <Input
-                  {...register("studentName")}
-                  placeholder="Nama lengkap"
-                  error={!!errors.studentName}
-                  disabled={!reservedCert}
-                  fullWidth
-                />
+                <Input {...register("studentName")} placeholder="Nama lengkap" error={!!errors.studentName} disabled={!reservedCert} fullWidth />
                 <FormError>{errors.studentName?.message}</FormError>
               </FormField>
 
@@ -474,15 +409,7 @@ export default function PrintCertificatePage() {
                   name="moduleId"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      {...field}
-                      value={field.value || ""}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                      placeholder="Pilih module"
-                      error={!!errors.moduleId}
-                      disabled={!reservedCert}
-                      fullWidth
-                    >
+                    <Select {...field} value={field.value || ""} onChange={(e) => field.onChange(Number(e.target.value))} placeholder="Pilih module" error={!!errors.moduleId} disabled={!reservedCert} fullWidth>
                       {modules.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name}
@@ -496,49 +423,45 @@ export default function PrintCertificatePage() {
 
               <FormField>
                 <FormLabel required>Tanggal PTC</FormLabel>
-                <Input
-                  type="date"
-                  {...register("ptcDate")}
-                  error={!!errors.ptcDate}
-                  disabled={!reservedCert}
-                  fullWidth
-                />
+                <Input type="date" {...register("ptcDate")} error={!!errors.ptcDate} disabled={!reservedCert} fullWidth />
                 <FormError>{errors.ptcDate?.message}</FormError>
               </FormField>
             </div>
           </div>
 
           <div className="px-6 pb-6">
-            <Button
-              variant="primary"
-              leftIcon={<Printer className="w-4 h-4" />}
-              onClick={handlePrintClick}
-              disabled={!reservedCert || isPrinting}
-              loading={isPrinting}
-              className="w-full"
-              type="button"
-            >
+            <Button variant="primary" leftIcon={<Printer className="w-4 h-4" />} onClick={handlePrintClick} disabled={!reservedCert || isPrinting} loading={isPrinting} className="w-full" type="button">
               {isPrinting ? "Memuat font..." : "Print Preview"}
             </Button>
+
+            {/* Print Tips Card */}
+            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg">
+              <div className="flex items-start gap-2 mb-2">
+                <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                </svg>
+                <h3 className="text-xs font-semibold text-amber-900 dark:text-amber-300">Print Tips</h3>
+              </div>
+              <ol className="text-xs text-amber-800 dark:text-amber-200/90 space-y-1.5 ml-6 list-decimal">
+                <li>
+                  Make sure the <strong>paper size is A4</strong>
+                </li>
+                <li>
+                  <strong>Uncheck "Headers and footers"</strong> in print settings
+                </li>
+                <li>If student name is too long, you can shorten it</li>
+                <li>Adjust quality to 300 DPI for best results</li>
+              </ol>
+            </div>
           </div>
         </Card>
 
         {/* ── RIGHT: A4 Preview ── */}
         <Card padding={false} className="overflow-hidden">
-          <div
-            ref={previewContainerRef}
-            className="relative w-full bg-neutral-100 dark:bg-neutral-900/60"
-            style={{ aspectRatio: "297 / 210" }}
-          >
+          <div ref={previewContainerRef} className="relative w-full bg-neutral-100 dark:bg-neutral-900/60" style={{ aspectRatio: "297 / 210" }}>
             <div className="absolute top-3 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
-              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
-                Preview A4
-              </p>
-              {reservedCert && (
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
-                  {reservedCert.certificate_number}
-                </span>
-              )}
+              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400">Preview A4</p>
+              {reservedCert && <span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{reservedCert.certificate_number}</span>}
             </div>
 
             <div

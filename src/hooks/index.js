@@ -28,6 +28,7 @@ export * from "./certificate/useCertificateStock";
 export * from "./certificate/useTeacherCertificates";
 export * from "./certificate/useCertificateLogs";
 export * from "./certificate/useCertificatePdf";
+export * from "./certificate/useExportPrints";
 
 // =============================================================================
 // DIVISION HOOKS
