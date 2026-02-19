@@ -13,6 +13,8 @@ export * from "./certificate/useCertificateLogs";
 export * from "./certificate/useCertificatePdf";
 export * from "./certificate/useExportPrints";
 
+export * from "./medal/useMedal";
+
 export * from "./division/useDivisions";
 export * from "./division/useDivisionMutations";
 

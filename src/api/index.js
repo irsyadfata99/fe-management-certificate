@@ -23,3 +23,5 @@ export * as certificatePdfApi from "./certificatePdf.api";
 export * as studentApi from "./student.api";
 
 export * as backupApi from "./backup.api";
+
+export * as medalApi from "./medal.api";

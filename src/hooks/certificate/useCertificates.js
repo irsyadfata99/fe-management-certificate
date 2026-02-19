@@ -69,6 +69,18 @@ export const useCertificates = (params = {}) => {
   });
 };
 
+// ─── useCertificateStock ──────────────────────────────────────────────────────
+// Response backend sekarang include medal_stock dan imbalance per branch.
+// Shape yang dinormalkan:
+// [
+//   {
+//     branch_id, branch_code, branch_name, is_head_branch,
+//     total, in_stock, reserved, printed, migrated,  ← certificate stock
+//     medal_stock,                                    ← medal quantity
+//     imbalance,                                      ← cert_in_stock - medal_stock
+//   }
+// ]
+
 export const useCertificateStock = () => {
   return useQuery({
     queryKey: ["certificates", "stock"],
@@ -76,73 +88,95 @@ export const useCertificateStock = () => {
     select: (data) => {
       console.log("[useCertificateStock] Raw data:", data);
 
-      let stock = [];
-      if (data?.head_branch || data?.sub_branches) {
-        const all = [];
+      const all = [];
 
-        if (data.head_branch) {
+      if (data?.head_branch) {
+        const hb = data.head_branch;
+        all.push({
+          branch_id: hb.id,
+          branch_code: hb.code,
+          branch_name: hb.name,
+          is_head_branch: true,
+          // certificate stock — bisa datang dari hb.certificate_stock atau hb.stock
+          total: parseInt(hb.certificate_stock?.total ?? hb.stock?.total ?? 0, 10),
+          in_stock: parseInt(hb.certificate_stock?.in_stock ?? hb.stock?.in_stock ?? 0, 10),
+          reserved: parseInt(hb.certificate_stock?.reserved ?? hb.stock?.reserved ?? 0, 10),
+          printed: parseInt(hb.certificate_stock?.printed ?? hb.stock?.printed ?? 0, 10),
+          migrated: parseInt(hb.certificate_stock?.migrated ?? hb.stock?.migrated ?? 0, 10),
+          // medal
+          medal_stock: hb.medal_stock ?? 0,
+          imbalance: hb.imbalance ?? 0,
+        });
+      }
+
+      if (Array.isArray(data?.sub_branches)) {
+        data.sub_branches.forEach((b) => {
           all.push({
-            branch_id: data.head_branch.id,
-            branch_code: data.head_branch.code,
-            branch_name: data.head_branch.name,
-            is_head_branch: true,
-            total: parseInt(data.head_branch.stock?.total || 0, 10),
-            in_stock: parseInt(data.head_branch.stock?.in_stock || 0, 10),
-            reserved: parseInt(data.head_branch.stock?.reserved || 0, 10),
-            printed: parseInt(data.head_branch.stock?.printed || 0, 10),
-            migrated: parseInt(data.head_branch.stock?.migrated || 0, 10),
+            branch_id: b.branch_id,
+            branch_code: b.branch_code,
+            branch_name: b.branch_name,
+            is_head_branch: false,
+            total: parseInt(b.certificate_stock?.total ?? b.stock?.total ?? 0, 10),
+            in_stock: parseInt(b.certificate_stock?.in_stock ?? b.stock?.in_stock ?? 0, 10),
+            reserved: parseInt(b.certificate_stock?.reserved ?? b.stock?.reserved ?? 0, 10),
+            printed: parseInt(b.certificate_stock?.printed ?? b.stock?.printed ?? 0, 10),
+            migrated: parseInt(b.certificate_stock?.migrated ?? b.stock?.migrated ?? 0, 10),
+            medal_stock: b.medal_stock ?? 0,
+            imbalance: b.imbalance ?? 0,
           });
-        }
+        });
+      }
 
-        if (Array.isArray(data.sub_branches)) {
-          data.sub_branches.forEach((b) =>
-            all.push({
-              branch_id: b.branch_id,
-              branch_code: b.branch_code,
-              branch_name: b.branch_name,
-              is_head_branch: false,
-              total: parseInt(b.stock?.total || 0, 10),
-              in_stock: parseInt(b.stock?.in_stock || 0, 10),
-              reserved: parseInt(b.stock?.reserved || 0, 10),
-              printed: parseInt(b.stock?.printed || 0, 10),
-              migrated: parseInt(b.stock?.migrated || 0, 10),
-            }),
-          );
-        }
-
-        stock = all;
-      } else if (Array.isArray(data)) {
-        stock = data;
+      // Fallback: format lama (array langsung)
+      if (all.length === 0 && Array.isArray(data)) {
+        return data;
       }
 
       console.log("[useCertificateStock] Processed stock:", {
-        count: stock.length,
-        sample: stock[0],
+        count: all.length,
+        sample: all[0],
       });
 
-      return stock;
+      return all;
     },
     staleTime: 30 * 1000,
   });
 };
 
-export const useStockAlerts = (params = {}) => {
+// ─── useStockAlerts ───────────────────────────────────────────────────────────
+// Response backend sekarang include:
+// { certificate_alerts, medal_alerts, summary, head_branch }
+// Select mengembalikan seluruh object agar bisa digunakan secara terpisah
+// oleh component yang membutuhkan.
+
+export const useStockAlerts = (threshold = 10) => {
   return useQuery({
-    queryKey: ["certificates", "alerts", params],
-    queryFn: () => certificateApi.getStockAlerts(params),
+    queryKey: ["certificates", "alerts", { threshold }],
+    queryFn: () => certificateApi.getStockAlerts(threshold),
     select: (data) => {
       console.log("[useStockAlerts] Raw data:", data);
 
-      let alerts = [];
-
-      if (data?.alerts && Array.isArray(data.alerts)) {
-        alerts = data.alerts;
-      } else if (Array.isArray(data)) {
-        alerts = data;
+      // Response baru: { certificate_alerts, medal_alerts, summary, head_branch }
+      if (data?.certificate_alerts || data?.medal_alerts) {
+        return {
+          certificate_alerts: data.certificate_alerts || [],
+          medal_alerts: data.medal_alerts || [],
+          summary: data.summary || {},
+          head_branch: data.head_branch || null,
+          // backward compat: beberapa component mungkin pakai data.alerts
+          alerts: [...(data.certificate_alerts || []), ...(data.medal_alerts || [])],
+        };
       }
 
-      console.log("[useStockAlerts] Processed alerts:", alerts.length);
-      return alerts;
+      // Fallback response lama: { alerts: [...] } atau array langsung
+      const alerts = data?.alerts || (Array.isArray(data) ? data : []);
+      return {
+        certificate_alerts: alerts,
+        medal_alerts: [],
+        summary: {},
+        head_branch: null,
+        alerts,
+      };
     },
     staleTime: 60 * 1000,
   });

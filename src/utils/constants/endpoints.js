@@ -27,8 +27,7 @@ export const API_ENDPOINTS = {
     DELETE: (id) => `/divisions/${id}`,
     CREATE_SUB: (divisionId) => `/divisions/${divisionId}/sub-divisions`,
     UPDATE_SUB: (subId) => `/divisions/sub-divisions/${subId}`,
-    TOGGLE_SUB_ACTIVE: (subId) =>
-      `/divisions/sub-divisions/${subId}/toggle-active`,
+    TOGGLE_SUB_ACTIVE: (subId) => `/divisions/sub-divisions/${subId}/toggle-active`,
     DELETE_SUB: (subId) => `/divisions/sub-divisions/${subId}`,
   },
   MODULES: {
@@ -91,6 +90,13 @@ export const API_ENDPOINTS = {
     UPDATE: (id) => `/students/${id}`,
     TOGGLE_ACTIVE: (id) => `/students/${id}/toggle-active`,
     MIGRATE: (id) => `/students/${id}/migrate`,
+  },
+  MEDALS: {
+    GET_STOCK: "/medals/stock",
+    ADD_STOCK: "/medals/add",
+    MIGRATE: "/medals/migrate",
+    GET_LOGS: "/medals/logs",
+    GET_ALERTS: "/medals/alerts",
   },
   BACKUP: {
     CREATE: "/backup/create",
