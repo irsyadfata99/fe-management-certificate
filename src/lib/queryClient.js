@@ -10,8 +10,8 @@ export const queryClient = new QueryClient({
       refetchOnReconnect: true,
       refetchOnMount: true,
 
-      staleTime: 30 * 1000,
-      gcTime: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
 
       useErrorBoundary: false,
     },

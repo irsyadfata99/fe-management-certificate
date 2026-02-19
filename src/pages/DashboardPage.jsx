@@ -1,29 +1,7 @@
-/**
- * Enhanced Dashboard Page - Production Ready with Nivo Charts
- * Role-based dashboard with charts, analytics, and activity timeline
- * - SuperAdmin: System overview with charts
- * - Admin: Stock analytics with charts
- * - Teacher: Personal statistics with charts
- *
- * UPDATED: Activity timeline now uses real API data
- * - SuperAdmin & Admin → useCertificateLogs
- * - Teacher → useMyPrints
- */
-
 import { useState, useMemo } from "react";
 import { isSuperAdmin, isAdmin, isTeacher } from "@/utils/constants/roles";
 import { useAuthStore } from "@/store/authStore";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Badge,
-  Skeleton,
-  Alert,
-  Button,
-  Modal,
-} from "@/components/ui";
+import { Card, CardHeader, CardTitle, CardContent, Badge, Skeleton, Alert, Button, Modal } from "@/components/ui";
 import {
   Building2,
   Users,
@@ -60,10 +38,7 @@ import { useTeachers } from "@/hooks/teacher/useTeachers";
 import { useStockAlerts } from "@/hooks/certificate/useCertificates";
 import { useCertificateStock } from "@/hooks/certificate/useCertificates";
 import { useCertificateStatistics } from "@/hooks/certificate/useCertificates";
-import {
-  useMyReservations,
-  useMyPrints,
-} from "@/hooks/certificate/useTeacherCertificates";
+import { useMyReservations, useMyPrints } from "@/hooks/certificate/useTeacherCertificates";
 import { useStudents } from "@/hooks/student/useStudents";
 import { useCertificateLogs } from "@/hooks/certificate/useCertificateLogs";
 import { formatRelative } from "@/utils/format/dateFormat";
@@ -117,14 +92,14 @@ const DEFAULT_ACTION_CONFIG = {
 // ─────────────────────────────────────────────────────────
 
 /**
- * Map a certificate log entry to activity item shape
+ * ✅ FIX 1: Gunakan field flat dari API (actor_name, actor_username)
+ * bukan nested object log.actor?.full_name yang tidak ada
  */
 function mapLogToActivity(log) {
   const config = ACTION_CONFIG[log.action_type] || DEFAULT_ACTION_CONFIG;
 
-  // Build message based on action type
   let message = "";
-  const actor = log.actor?.full_name || log.actor?.username || "Unknown";
+  const actor = log.actor_name || log.actor_username || "Unknown";
   const certNum = log.certificate_number || "";
 
   switch (log.action_type) {
@@ -132,13 +107,14 @@ function mapLogToActivity(log) {
       message = `${actor} bulk created certificates`;
       break;
     case "migrate":
-      message = `${actor} migrated ${certNum} to ${log.to_branch?.name || "another branch"}`;
+      // ✅ FIX: gunakan log.to_branch_name, bukan log.to_branch?.name
+      message = `${actor} migrated ${certNum} to ${log.to_branch_name || "another branch"}`;
       break;
     case "reserve":
       message = `${actor} reserved ${certNum}`;
       break;
     case "print":
-      message = `${actor} printed ${certNum}${log.student_name ? ` for ${log.student_name}` : ""}`;
+      message = `${actor} printed ${certNum}${log.metadata?.student_name ? ` for ${log.metadata.student_name}` : ""}`;
       break;
     case "release":
       message = `${actor} released ${certNum}`;
@@ -160,7 +136,6 @@ function mapLogToActivity(log) {
  * Map a print record (Teacher) to activity item shape
  */
 function mapPrintToActivity(print) {
-  // Determine if it had a PDF upload recently
   const hasPdf = !!print.pdf_path;
 
   if (hasPdf) {
@@ -169,9 +144,7 @@ function mapPrintToActivity(print) {
       iconColor: "text-blue-500",
       bgColor: "bg-blue-100 dark:bg-blue-900/30",
       message: `Uploaded PDF for ${print.certificate_number || "certificate"}`,
-      time: formatRelative(
-        print.updated_at || print.printed_at || print.createdAt,
-      ),
+      time: formatRelative(print.updated_at || print.printed_at || print.createdAt),
     };
   }
 
@@ -179,9 +152,7 @@ function mapPrintToActivity(print) {
     icon: Printer,
     iconColor: "text-green-500",
     bgColor: "bg-green-100 dark:bg-green-900/30",
-    message: `Printed certificate for ${print.student_name || "student"}${
-      print.certificate_number ? ` (${print.certificate_number})` : ""
-    }`,
+    message: `Printed certificate for ${print.student_name || "student"}${print.certificate_number ? ` (${print.certificate_number})` : ""}`,
     time: formatRelative(print.printed_at || print.createdAt),
   };
 }
@@ -211,9 +182,7 @@ function ActivityTimeline({ activities = [], isLoading = false }) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <Activity className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          No recent activity
-        </p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">No recent activity</p>
       </div>
     );
   }
@@ -223,19 +192,13 @@ function ActivityTimeline({ activities = [], isLoading = false }) {
       {activities.map((activity, index) => (
         <div key={index} className="flex gap-2.5">
           <div className="flex-shrink-0">
-            <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center ${activity.bgColor}`}
-            >
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center ${activity.bgColor}`}>
               <activity.icon className={`w-3.5 h-3.5 ${activity.iconColor}`} />
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-slate-900 dark:text-white leading-tight">
-              {activity.message}
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {activity.time}
-            </p>
+            <p className="text-sm text-slate-900 dark:text-white leading-tight">{activity.message}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{activity.time}</p>
           </div>
         </div>
       ))}
@@ -247,16 +210,7 @@ function ActivityTimeline({ activities = [], isLoading = false }) {
 // ENHANCED STATS CARD
 // ─────────────────────────────────────────────────────────
 
-function EnhancedStatsCard({
-  title,
-  value,
-  subtitle,
-  icon,
-  iconColor,
-  iconBg,
-  trend,
-  isLoading,
-}) {
+function EnhancedStatsCard({ title, value, subtitle, icon, iconColor, iconBg, trend, isLoading }) {
   const Icon = icon;
   const isPositive = trend > 0;
   const isNegative = trend < 0;
@@ -265,9 +219,7 @@ function EnhancedStatsCard({
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div
-            className={`flex-shrink-0 w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center`}
-          >
+          <div className={`flex-shrink-0 w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center`}>
             <Icon className={`w-5 h-5 ${iconColor}`} />
           </div>
           <div className="flex-1 min-w-0">
@@ -278,34 +230,18 @@ function EnhancedStatsCard({
               </div>
             ) : (
               <>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">
-                  {title}
-                </p>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">{title}</p>
                 <div className="flex items-baseline gap-2 mt-0.5">
-                  <p className="text-xl font-bold text-slate-900 dark:text-white">
-                    {value}
-                  </p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{value}</p>
                   {trend !== undefined && (
-                    <div
-                      className={`flex items-center text-xs font-medium ${
-                        isPositive
-                          ? "text-green-600 dark:text-green-400"
-                          : isNegative
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-slate-500"
-                      }`}
-                    >
+                    <div className={`flex items-center text-xs font-medium ${isPositive ? "text-green-600 dark:text-green-400" : isNegative ? "text-red-600 dark:text-red-400" : "text-slate-500"}`}>
                       {isPositive && <ArrowUpRight className="w-3 h-3" />}
                       {isNegative && <ArrowDownRight className="w-3 h-3" />}
                       <span>{Math.abs(trend)}%</span>
                     </div>
                   )}
                 </div>
-                {subtitle && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {subtitle}
-                  </p>
-                )}
+                {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
               </>
             )}
           </div>
@@ -317,6 +253,8 @@ function EnhancedStatsCard({
 
 // ─────────────────────────────────────────────────────────
 // CHART COMPONENTS
+// ✅ FIX 2: Tambah w-full min-w-0 pada wrapper untuk cegah
+// Nivo menghitung lebar negatif saat pertama render
 // ─────────────────────────────────────────────────────────
 
 function LineChart({ data }) {
@@ -405,8 +343,7 @@ function PieChart({ data }) {
 }
 
 // ─────────────────────────────────────────────────────────
-// STATIC CHART DATA GENERATORS (charts still use mock data
-// until dedicated statistics endpoints return time-series)
+// STATIC CHART DATA GENERATORS
 // ─────────────────────────────────────────────────────────
 
 function generatePrintsTrendData() {
@@ -487,18 +424,10 @@ function SuperAdminDashboard() {
   const user = useAuthStore((state) => state.user);
   const [showAddBranchModal, setShowAddBranchModal] = useState(false);
 
-  // Data
   const { data: branchesData, isLoading: loadingBranches } = useBranches();
   const { data: teachers, isLoading: loadingTeachers } = useTeachers();
-  const { data: alerts, isLoading: loadingAlerts } = useStockAlerts({
-    threshold: 10,
-  });
-
-  // Real activity: all log types, latest 5
-  const { data: logsData, isLoading: loadingLogs } = useCertificateLogs({
-    limit: 5,
-    page: 1,
-  });
+  const { data: alerts, isLoading: loadingAlerts } = useStockAlerts({ threshold: 10 });
+  const { data: logsData, isLoading: loadingLogs } = useCertificateLogs({ limit: 5, page: 1 });
 
   const branches = branchesData?.branches || [];
   const isLoading = loadingBranches || loadingTeachers || loadingAlerts;
@@ -506,12 +435,9 @@ function SuperAdminDashboard() {
   const totalBranches = branches.length;
   const activeBranches = branches.filter((b) => b.is_active).length;
   const totalTeachers = teachers?.teachers?.length || teachers?.length || 0;
-  const activeTeachers =
-    (teachers?.teachers || teachers || []).filter((t) => t.is_active)?.length ||
-    0;
+  const activeTeachers = (teachers?.teachers || teachers || []).filter((t) => t.is_active)?.length || 0;
   const stockAlerts = alerts?.length || 0;
 
-  // Map logs → activity items
   const activities = useMemo(() => {
     const logs = logsData?.logs || [];
     return logs.map(mapLogToActivity);
@@ -525,53 +451,17 @@ function SuperAdminDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Welcome back, {user?.full_name || user?.username}
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Welcome back, {user?.full_name || user?.username}</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <EnhancedStatsCard
-          title="Total Branches"
-          value={totalBranches}
-          subtitle={`${activeBranches} active`}
-          icon={Building2}
-          iconColor="text-blue-600 dark:text-blue-400"
-          iconBg="bg-blue-100 dark:bg-blue-900/30"
-          isLoading={isLoading}
-        />
-        <EnhancedStatsCard
-          title="Active Teachers"
-          value={activeTeachers}
-          subtitle={`${totalTeachers} total`}
-          icon={Users}
-          iconColor="text-green-600 dark:text-green-400"
-          iconBg="bg-green-100 dark:bg-green-900/30"
-          isLoading={isLoading}
-        />
-        <EnhancedStatsCard
-          title="Stock Alerts"
-          value={stockAlerts}
-          subtitle="Low stock branches"
-          icon={AlertTriangle}
-          iconColor="text-yellow-600 dark:text-yellow-400"
-          iconBg="bg-yellow-100 dark:bg-yellow-900/30"
-          isLoading={isLoading}
-        />
-        <EnhancedStatsCard
-          title="System Health"
-          value="Good"
-          subtitle="All systems operational"
-          icon={TrendingUp}
-          iconColor="text-purple-600 dark:text-purple-400"
-          iconBg="bg-purple-100 dark:bg-purple-900/30"
-          isLoading={false}
-        />
+        <EnhancedStatsCard title="Total Branches" value={totalBranches} subtitle={`${activeBranches} active`} icon={Building2} iconColor="text-blue-600 dark:text-blue-400" iconBg="bg-blue-100 dark:bg-blue-900/30" isLoading={isLoading} />
+        <EnhancedStatsCard title="Active Teachers" value={activeTeachers} subtitle={`${totalTeachers} total`} icon={Users} iconColor="text-green-600 dark:text-green-400" iconBg="bg-green-100 dark:bg-green-900/30" isLoading={isLoading} />
+        <EnhancedStatsCard title="Stock Alerts" value={stockAlerts} subtitle="Low stock branches" icon={AlertTriangle} iconColor="text-yellow-600 dark:text-yellow-400" iconBg="bg-yellow-100 dark:bg-yellow-900/30" isLoading={isLoading} />
+        <EnhancedStatsCard title="System Health" value="Good" subtitle="All systems operational" icon={TrendingUp} iconColor="text-purple-600 dark:text-purple-400" iconBg="bg-purple-100 dark:bg-purple-900/30" isLoading={false} />
       </div>
 
       {/* Charts */}
@@ -579,12 +469,11 @@ function SuperAdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Certificate Prints Trend</CardTitle>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Last 6 months
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Last 6 months</p>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px]">
+            {/* ✅ FIX 2: w-full min-w-0 mencegah Nivo hitung lebar negatif */}
+            <div className="h-[240px] w-full min-w-0">
               <LineChart data={printsTrendData} />
             </div>
           </CardContent>
@@ -593,12 +482,10 @@ function SuperAdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Stock Distribution</CardTitle>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Across all branches
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Across all branches</p>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px]">
+            <div className="h-[240px] w-full min-w-0">
               <BarChart data={stockPerBranchData} />
             </div>
           </CardContent>
@@ -629,19 +516,12 @@ function SuperAdminDashboard() {
             ) : stockAlerts > 0 ? (
               <div className="space-y-2">
                 {alerts?.slice(0, 5).map((alert) => (
-                  <div
-                    key={alert.branch_id}
-                    className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                  >
+                  <div key={alert.branch_id} className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <div className="flex items-center gap-2.5">
                       <AlertTriangle className="w-4 h-4 text-yellow-500" />
                       <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">
-                          {alert.branch_name}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Only {alert.in_stock} certificates remaining
-                        </p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">{alert.branch_name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Only {alert.in_stock} certificates remaining</p>
                       </div>
                     </div>
                     <Badge variant="warning" size="sm">
@@ -651,23 +531,14 @@ function SuperAdminDashboard() {
                 ))}
               </div>
             ) : (
-              <Alert variant="success">
-                All branches have sufficient stock
-              </Alert>
+              <Alert variant="success">All branches have sufficient stock</Alert>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <Modal
-        open={showAddBranchModal}
-        onClose={() => setShowAddBranchModal(false)}
-        title="Add New Branch"
-        size="md"
-      >
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Add branch form will be implemented here
-        </p>
+      <Modal open={showAddBranchModal} onClose={() => setShowAddBranchModal(false)} title="Add New Branch" size="md">
+        <p className="text-sm text-slate-600 dark:text-slate-400">Add branch form will be implemented here</p>
       </Modal>
     </div>
   );
@@ -681,28 +552,17 @@ function AdminDashboard() {
   const user = useAuthStore((state) => state.user);
   const [showAddStockModal, setShowAddStockModal] = useState(false);
 
-  // Data
   const { data: stockData, isLoading: loadingStock } = useCertificateStock();
-  const { data: statistics, isLoading: loadingStats } =
-    useCertificateStatistics();
-
-  // Real activity: focus on print, reserve, release — latest 5
-  const { data: logsData, isLoading: loadingLogs } = useCertificateLogs({
-    limit: 5,
-    page: 1,
-  });
+  const { data: statistics, isLoading: loadingStats } = useCertificateStatistics();
+  const { data: logsData, isLoading: loadingLogs } = useCertificateLogs({ limit: 5, page: 1 });
 
   const isLoading = loadingStock || loadingStats;
 
-  const totalStock =
-    stockData?.reduce((sum, branch) => sum + (branch.total || 0), 0) || 0;
-  const totalAvailable =
-    stockData?.reduce((sum, branch) => sum + (branch.in_stock || 0), 0) || 0;
-  const totalReserved =
-    stockData?.reduce((sum, branch) => sum + (branch.reserved || 0), 0) || 0;
+  const totalStock = stockData?.reduce((sum, branch) => sum + (branch.total || 0), 0) || 0;
+  const totalAvailable = stockData?.reduce((sum, branch) => sum + (branch.in_stock || 0), 0) || 0;
+  const totalReserved = stockData?.reduce((sum, branch) => sum + (branch.reserved || 0), 0) || 0;
   const totalPrinted = statistics?.total_printed || 0;
 
-  // Map logs → activity items
   const activities = useMemo(() => {
     const logs = logsData?.logs || [];
     return logs.map(mapLogToActivity);
@@ -720,53 +580,17 @@ function AdminDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Welcome back, {user?.full_name || user?.username}
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Welcome back, {user?.full_name || user?.username}</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <EnhancedStatsCard
-          title="Total Stock"
-          value={totalStock}
-          subtitle="All certificates"
-          icon={Package}
-          iconColor="text-blue-600 dark:text-blue-400"
-          iconBg="bg-blue-100 dark:bg-blue-900/30"
-          isLoading={isLoading}
-        />
-        <EnhancedStatsCard
-          title="Available"
-          value={totalAvailable}
-          subtitle="Ready to reserve"
-          icon={CheckCircle}
-          iconColor="text-green-600 dark:text-green-400"
-          iconBg="bg-green-100 dark:bg-green-900/30"
-          isLoading={isLoading}
-        />
-        <EnhancedStatsCard
-          title="Reserved"
-          value={totalReserved}
-          subtitle="Pending print"
-          icon={Clock}
-          iconColor="text-yellow-600 dark:text-yellow-400"
-          iconBg="bg-yellow-100 dark:bg-yellow-900/30"
-          isLoading={isLoading}
-        />
-        <EnhancedStatsCard
-          title="Printed"
-          value={totalPrinted}
-          subtitle="Total printed"
-          icon={FileText}
-          iconColor="text-purple-600 dark:text-purple-400"
-          iconBg="bg-purple-100 dark:bg-purple-900/30"
-          isLoading={isLoading}
-        />
+        <EnhancedStatsCard title="Total Stock" value={totalStock} subtitle="All certificates" icon={Package} iconColor="text-blue-600 dark:text-blue-400" iconBg="bg-blue-100 dark:bg-blue-900/30" isLoading={isLoading} />
+        <EnhancedStatsCard title="Available" value={totalAvailable} subtitle="Ready to reserve" icon={CheckCircle} iconColor="text-green-600 dark:text-green-400" iconBg="bg-green-100 dark:bg-green-900/30" isLoading={isLoading} />
+        <EnhancedStatsCard title="Reserved" value={totalReserved} subtitle="Pending print" icon={Clock} iconColor="text-yellow-600 dark:text-yellow-400" iconBg="bg-yellow-100 dark:bg-yellow-900/30" isLoading={isLoading} />
+        <EnhancedStatsCard title="Printed" value={totalPrinted} subtitle="Total printed" icon={FileText} iconColor="text-purple-600 dark:text-purple-400" iconBg="bg-purple-100 dark:bg-purple-900/30" isLoading={isLoading} />
       </div>
 
       {/* Charts */}
@@ -774,12 +598,10 @@ function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Monthly Print Statistics</CardTitle>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Last 6 months
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Last 6 months</p>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px]">
+            <div className="h-[240px] w-full min-w-0">
               <LineChart data={monthlyPrintsData} />
             </div>
           </CardContent>
@@ -788,12 +610,10 @@ function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Stock Status Distribution</CardTitle>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Current status breakdown
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Current status breakdown</p>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px]">
+            <div className="h-[240px] w-full min-w-0">
               <PieChart data={stockStatusData} />
             </div>
           </CardContent>
@@ -816,34 +636,19 @@ function AdminDashboard() {
             ) : stockData && stockData.length > 0 ? (
               <div className="space-y-2 max-h-[240px] overflow-y-auto">
                 {stockData.map((branch) => (
-                  <div
-                    key={branch.branch_id}
-                    className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                  >
+                  <div key={branch.branch_id} className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">
-                        {branch.branch_name}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Total: {branch.total || 0}
-                      </p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{branch.branch_name}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Total: {branch.total || 0}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                          {branch.in_stock || 0}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Available
-                        </p>
+                        <p className="text-sm font-medium text-green-600 dark:text-green-400">{branch.in_stock || 0}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Available</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-                          {branch.reserved || 0}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Reserved
-                        </p>
+                        <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">{branch.reserved || 0}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Reserved</p>
                       </div>
                     </div>
                   </div>
@@ -868,15 +673,8 @@ function AdminDashboard() {
         </Card>
       </div>
 
-      <Modal
-        open={showAddStockModal}
-        onClose={() => setShowAddStockModal(false)}
-        title="Add Stock"
-        size="md"
-      >
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Add stock form will be implemented here
-        </p>
+      <Modal open={showAddStockModal} onClose={() => setShowAddStockModal(false)} title="Add Stock" size="md">
+        <p className="text-sm text-slate-600 dark:text-slate-400">Add stock form will be implemented here</p>
       </Modal>
     </div>
   );
@@ -890,15 +688,12 @@ function TeacherDashboard() {
   const user = useAuthStore((state) => state.user);
   const [showReserveModal, setShowReserveModal] = useState(false);
 
-  // Data
-  const { data: reservations, isLoading: loadingReservations } =
-    useMyReservations();
+  const { data: reservations, isLoading: loadingReservations } = useMyReservations();
   const { data: printsData, isLoading: loadingPrints } = useMyPrints();
   const { data: studentsData, isLoading: loadingStudents } = useStudents();
 
   const isLoading = loadingReservations || loadingPrints || loadingStudents;
 
-  // Stats
   const activeReservations = reservations?.length || 0;
   const prints = printsData?.prints || [];
   const totalPrints = prints.length;
@@ -907,14 +702,11 @@ function TeacherDashboard() {
   const now = new Date();
   const thisMonth = prints.filter((p) => {
     const d = new Date(p.printed_at || p.createdAt);
-    return (
-      d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-    );
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
   const pendingUploads = prints.filter((p) => !p.pdf_path).length;
 
-  // Map prints → activity items (latest 5, sorted newest first)
   const activities = useMemo(() => {
     return [...prints]
       .sort((a, b) => {
@@ -928,11 +720,7 @@ function TeacherDashboard() {
 
   const myPrintsData = generateTeacherPrintsData();
   const uploadStatusData = [
-    {
-      id: "Uploaded",
-      label: "PDF Uploaded",
-      value: totalPrints - pendingUploads,
-    },
+    { id: "Uploaded", label: "PDF Uploaded", value: totalPrints - pendingUploads },
     { id: "Pending", label: "Pending Upload", value: pendingUploads },
   ];
 
@@ -941,53 +729,17 @@ function TeacherDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Welcome back, {user?.full_name || user?.username}
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Welcome back, {user?.full_name || user?.username}</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <EnhancedStatsCard
-          title="Active Reservations"
-          value={activeReservations}
-          subtitle="Reserved certificates"
-          icon={Clock}
-          iconColor="text-blue-600 dark:text-blue-400"
-          iconBg="bg-blue-100 dark:bg-blue-900/30"
-          isLoading={isLoading}
-        />
-        <EnhancedStatsCard
-          title="Prints This Month"
-          value={thisMonth}
-          subtitle={`${totalPrints} total`}
-          icon={Printer}
-          iconColor="text-green-600 dark:text-green-400"
-          iconBg="bg-green-100 dark:bg-green-900/30"
-          isLoading={isLoading}
-        />
-        <EnhancedStatsCard
-          title="Total Students"
-          value={totalStudents}
-          subtitle="Student records"
-          icon={UserCircle}
-          iconColor="text-purple-600 dark:text-purple-400"
-          iconBg="bg-purple-100 dark:bg-purple-900/30"
-          isLoading={isLoading}
-        />
-        <EnhancedStatsCard
-          title="Pending Uploads"
-          value={pendingUploads}
-          subtitle="PDFs to upload"
-          icon={FileText}
-          iconColor="text-yellow-600 dark:text-yellow-400"
-          iconBg="bg-yellow-100 dark:bg-yellow-900/30"
-          isLoading={isLoading}
-        />
+        <EnhancedStatsCard title="Active Reservations" value={activeReservations} subtitle="Reserved certificates" icon={Clock} iconColor="text-blue-600 dark:text-blue-400" iconBg="bg-blue-100 dark:bg-blue-900/30" isLoading={isLoading} />
+        <EnhancedStatsCard title="Prints This Month" value={thisMonth} subtitle={`${totalPrints} total`} icon={Printer} iconColor="text-green-600 dark:text-green-400" iconBg="bg-green-100 dark:bg-green-900/30" isLoading={isLoading} />
+        <EnhancedStatsCard title="Total Students" value={totalStudents} subtitle="Student records" icon={UserCircle} iconColor="text-purple-600 dark:text-purple-400" iconBg="bg-purple-100 dark:bg-purple-900/30" isLoading={isLoading} />
+        <EnhancedStatsCard title="Pending Uploads" value={pendingUploads} subtitle="PDFs to upload" icon={FileText} iconColor="text-yellow-600 dark:text-yellow-400" iconBg="bg-yellow-100 dark:bg-yellow-900/30" isLoading={isLoading} />
       </div>
 
       {/* Charts */}
@@ -995,12 +747,10 @@ function TeacherDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>My Print Statistics</CardTitle>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Last 6 months
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Last 6 months</p>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px]">
+            <div className="h-[240px] w-full min-w-0">
               <BarChart data={myPrintsData} keys={["prints"]} indexBy="month" />
             </div>
           </CardContent>
@@ -1009,12 +759,10 @@ function TeacherDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>PDF Upload Status</CardTitle>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Upload completion rate
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Upload completion rate</p>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px]">
+            <div className="h-[240px] w-full min-w-0">
               <PieChart data={uploadStatusData} />
             </div>
           </CardContent>
@@ -1023,7 +771,6 @@ function TeacherDashboard() {
 
       {/* Reservations & Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Reservations or Recent Prints */}
         {activeReservations > 0 ? (
           <Card>
             <CardHeader>
@@ -1035,20 +782,10 @@ function TeacherDashboard() {
               ) : (
                 <div className="space-y-2 max-h-[240px] overflow-y-auto">
                   {reservations?.slice(0, 5).map((reservation) => (
-                    <div
-                      key={reservation.id}
-                      className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    >
+                    <div key={reservation.id} className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                       <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">
-                          {reservation.certificate_number}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Reserved{" "}
-                          {new Date(
-                            reservation.created_at,
-                          ).toLocaleDateString()}
-                        </p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">{reservation.certificate_number}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Reserved {new Date(reservation.created_at).toLocaleDateString()}</p>
                       </div>
                       <Badge variant="warning" size="sm">
                         Reserved
@@ -1074,23 +811,14 @@ function TeacherDashboard() {
               ) : prints.length > 0 ? (
                 <div className="space-y-2 max-h-[240px] overflow-y-auto">
                   {prints.slice(0, 5).map((print) => (
-                    <div
-                      key={print.id}
-                      className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    >
+                    <div key={print.id} className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                       <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">
-                          {print.student_name}
-                        </p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">{print.student_name}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {print.certificate_number} ·{" "}
-                          {new Date(print.printed_at).toLocaleDateString()}
+                          {print.certificate_number} · {new Date(print.printed_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <Badge
-                        variant={print.pdf_path ? "success" : "warning"}
-                        size="sm"
-                      >
+                      <Badge variant={print.pdf_path ? "success" : "warning"} size="sm">
                         {print.pdf_path ? "PDF Uploaded" : "Pending PDF"}
                       </Badge>
                     </div>
@@ -1103,7 +831,6 @@ function TeacherDashboard() {
           </Card>
         )}
 
-        {/* Recent Activity — from real prints data */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -1112,23 +839,13 @@ function TeacherDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <ActivityTimeline
-              activities={activities}
-              isLoading={loadingPrints}
-            />
+            <ActivityTimeline activities={activities} isLoading={loadingPrints} />
           </CardContent>
         </Card>
       </div>
 
-      <Modal
-        open={showReserveModal}
-        onClose={() => setShowReserveModal(false)}
-        title="Reserve Certificate"
-        size="md"
-      >
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Reserve certificate form will be implemented here
-        </p>
+      <Modal open={showReserveModal} onClose={() => setShowReserveModal(false)} title="Reserve Certificate" size="md">
+        <p className="text-sm text-slate-600 dark:text-slate-400">Reserve certificate form will be implemented here</p>
       </Modal>
     </div>
   );
