@@ -28,7 +28,6 @@ import UnauthorizedPage from "@/pages/errors/UnauthorizedPage";
 
 import TeacherPrintsPage from "@/pages/teacher/TeacherPrintsPage";
 import MyReservation from "@/pages/teacher/MyReservation";
-import MyHistory from "@/pages/teacher/PrintHistory";
 import StudentsPage from "@/pages/teacher/StudentsPage";
 
 export const router = createBrowserRouter([
@@ -152,15 +151,6 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["teacher"]}>
             <MyReservation />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "certificates/history",
-        element: (
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <MyHistory />
           </ProtectedRoute>
         ),
       },

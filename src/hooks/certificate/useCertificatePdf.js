@@ -18,10 +18,8 @@ export const useUploadCertificatePdf = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ printId, file }) =>
-      certificatePdfApi.uploadCertificatePdf(printId, file),
+    mutationFn: ({ printId, file }) => certificatePdfApi.uploadCertificatePdf(printId, file),
     onSuccess: () => {
-      // ← REMOVE 'data, variables'
       queryClient.invalidateQueries({ queryKey: ["my-prints"] });
       queryClient.invalidateQueries({
         queryKey: ["certificates"],
@@ -38,20 +36,14 @@ export const useUploadCertificatePdf = () => {
 
 export const useDownloadCertificatePdf = () => {
   return useMutation({
-    mutationFn: async (printId) => {
-      const response = await api.get(
-        API_ENDPOINTS.CERTIFICATE_PDF.DOWNLOAD(printId),
-        {
-          responseType: "blob",
-        },
-      );
+    // ← Ubah: terima { printId, filename } instead of printId
+    mutationFn: async ({ printId, filename }) => {
+      const response = await api.get(API_ENDPOINTS.CERTIFICATE_PDF.DOWNLOAD(printId), { responseType: "blob" });
 
-      const filename =
-        getFilenameFromHeader(response.headers["content-disposition"]) ||
-        `certificate-${printId}.pdf`;
+      // Gunakan filename custom, fallback ke header/default
+      const finalFilename = filename || getFilenameFromHeader(response.headers["content-disposition"]) || `certificate-${printId}.pdf`;
 
-      downloadBlob(response.data, filename);
-
+      downloadBlob(response.data, finalFilename);
       return { success: true };
     },
     onSuccess: () => {

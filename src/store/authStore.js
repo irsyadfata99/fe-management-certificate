@@ -17,18 +17,12 @@ export const useAuthStore = create(
             userData = userDataOrObject;
             token = accessToken;
             refresh = refreshToken;
-          } else if (
-            typeof userDataOrObject === "object" &&
-            userDataOrObject !== null
-          ) {
+          } else if (typeof userDataOrObject === "object" && userDataOrObject !== null) {
             userData = userDataOrObject.user;
             token = userDataOrObject.accessToken || userDataOrObject.token;
             refresh = userDataOrObject.refreshToken;
           } else {
-            console.error(
-              "[AuthStore] Invalid login data format:",
-              userDataOrObject,
-            );
+            console.error("[AuthStore] Invalid login data format:", userDataOrObject);
             throw new Error("Invalid login data format");
           }
 
@@ -143,8 +137,7 @@ export const useAuthStore = create(
         };
 
         const userLevel = roleHierarchy[user.role.toLowerCase()] ?? -1;
-        const requiredLevel =
-          roleHierarchy[minimumRole.toLowerCase()] ?? Infinity;
+        const requiredLevel = roleHierarchy[minimumRole.toLowerCase()] ?? Infinity;
 
         return userLevel >= requiredLevel;
       },

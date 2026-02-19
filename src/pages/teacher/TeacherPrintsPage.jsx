@@ -1,16 +1,3 @@
-/**
- * Teacher Prints Page
- * View print history and manage PDFs
- *
- * FEATURES:
- * - Stats cards (total prints, this month, PDFs uploaded)
- * - Filters: search, date range, module filter
- * - Print history table with pagination
- * - Upload PDF modal
- * - Download/Delete PDF actions
- * - Export to Excel
- */
-
 import { useState, useMemo, useCallback } from "react";
 import { FileText, Download, Trash2, Upload, Calendar, Search, X, CheckCircle, AlertCircle, FileUp } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
@@ -18,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { useMyPrints, useUploadCertificatePdf, useDownloadCertificatePdf, useDeleteCertificatePdf, useTeacherModules } from "@/hooks";
+import { useAuthStore } from "@/store/authStore"; // ← Tambah
 
 import { useExportMyPrints } from "@/hooks/certificate/useExportPrints";
 import { useDisclosure } from "@/hooks/shared/useDisclosure";
@@ -53,6 +41,19 @@ const uploadPdfSchema = z.object({
       message: "File size must not exceed 10MB",
     }),
 });
+
+// ─────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────
+
+// Generate filename: YYYY-MM-DD_username_Student_Name.pdf
+function generatePdfFilename(print, username) {
+  const rawDate = print.printed_at || print.created_at;
+  const date = rawDate ? new Date(rawDate).toISOString().slice(0, 10) : "unknown-date";
+  const teacher = (username || "Teacher").replace(/\s+/g, "_");
+  const studentName = (print.student_name || "Student").replace(/\s+/g, "_");
+  return `${date}_${teacher}_${studentName}.pdf`;
+}
 
 // ─────────────────────────────────────────────────────────
 // SUB-COMPONENTS
@@ -233,6 +234,9 @@ function TableRowSkeleton() {
 // ─────────────────────────────────────────────────────────
 
 export default function TeacherPrintsPage() {
+  // ← Ambil username dari authStore
+  const username = useAuthStore((state) => state.user?.username);
+
   // ── Filters ──
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -256,7 +260,6 @@ export default function TeacherPrintsPage() {
 
   const { data: modules = [], isLoading: isLoadingModules } = useTeacherModules();
 
-  // FIX: wrap prints dalam useMemo agar referensi stabil
   const prints = useMemo(() => printsData?.prints || [], [printsData]);
   const pagination = printsData?.pagination || null;
 
@@ -303,11 +306,13 @@ export default function TeacherPrintsPage() {
     [uploadPdf],
   );
 
+  // ← Terima full print object, generate filename dari username + student name
   const handleDownload = useCallback(
-    async (printId) => {
-      await downloadPdf(printId);
+    async (print) => {
+      const filename = generatePdfFilename(print, username);
+      await downloadPdf({ printId: print.id, filename });
     },
-    [downloadPdf],
+    [downloadPdf, username],
   );
 
   const handleDeleteClick = useCallback(
@@ -484,9 +489,7 @@ export default function TeacherPrintsPage() {
 
                     {/* Print Date */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {formatDateTime(print.printed_at || print.createdAt)} {/* tambah fallback */}
-                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{formatDateTime(print.printed_at || print.createdAt)}</span>
                     </td>
 
                     {/* PDF Status */}
@@ -509,9 +512,9 @@ export default function TeacherPrintsPage() {
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {print.pdf_path ? (
                           <>
-                            {/* Download */}
+                            {/* Download ← pass full print object */}
                             <button
-                              onClick={() => handleDownload(print.id)}
+                              onClick={() => handleDownload(print)}
                               disabled={isDownloading}
                               className="px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors disabled:opacity-50"
                               title="Download PDF"
